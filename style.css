@@ -2,9 +2,9 @@
     --primary-color: #ffc107; /* Amber */
     --dark-color: #333;
     --light-color: #f4f4f4;
-    --danger-color: #f44336;
-    --success-color: #4CAF50;
-    --info-color: #007bff;
+    --danger-color: #dc3545;
+    --success-color: #198754;
+    --info-color: #0d6efd;
     --border-radius: 8px;
     --shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
@@ -18,14 +18,15 @@ body {
     padding: 20px;
 }
 
-header {
-    text-align: center;
-    margin-bottom: 20px;
+header h1, h2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-header h1 {
+header h1 i, h2 i {
+    margin-right: 10px;
     color: var(--primary-color);
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
 }
 
 #app-container {
@@ -44,18 +45,24 @@ header h1 {
 }
 
 h2 {
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 20px;
     border-bottom: 2px solid var(--primary-color);
     padding-bottom: 10px;
 }
+h2 i { color: var(--dark-color); }
+
 
 /* Estilos do Formulário */
 form label {
-    display: block;
+    display: flex;
+    align-items: center;
     margin-bottom: 5px;
     font-weight: bold;
+}
+
+form label i {
+    margin-right: 8px;
+    color: var(--primary-color);
+    font-size: 1.1em;
 }
 
 form input,
@@ -68,7 +75,6 @@ form select {
     box-sizing: border-box;
 }
 
-/* Validação visual */
 form input:invalid {
     border-color: var(--danger-color);
 }
@@ -86,6 +92,10 @@ form input[type="file"] {
 }
 
 button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 10px 20px;
     border: none;
     border-radius: var(--border-radius);
@@ -96,10 +106,10 @@ button {
 }
 
 .btn-salvar { background-color: var(--success-color); }
-.btn-salvar:hover { background-color: #45a049; }
+.btn-salvar:hover { background-color: #157347; }
 
 .btn-limpar { background-color: var(--danger-color); }
-.btn-limpar:hover { background-color: #da190b; }
+.btn-limpar:hover { background-color: #bb2d3b; }
 
 .cliente-actions button {
     padding: 5px 10px;
@@ -108,10 +118,10 @@ button {
 }
 
 .btn-excluir { background-color: var(--danger-color); }
-.btn-excluir:hover { background-color: #da190b; }
+.btn-excluir:hover { background-color: #bb2d3b; }
 
 .btn-pdf { background-color: var(--info-color); }
-.btn-pdf:hover { background-color: #0069d9; }
+.btn-pdf:hover { background-color: #0b5ed7; }
 
 /* Estilos da Lista de Clientes */
 #lista-clientes-container {
@@ -133,9 +143,17 @@ button {
 
 .cliente-info h3 {
     margin: 0 0 5px 0;
+    display: flex;
+    align-items: center;
 }
 
 .cliente-info p {
     margin: 0;
     color: #666;
+}
+
+.cliente-info .icon-imagem-anexada {
+    color: var(--info-color);
+    margin-left: 8px;
+    font-size: 0.8em;
 }
