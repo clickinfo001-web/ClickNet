@@ -75,6 +75,7 @@ form select {
     box-sizing: border-box;
 }
 
+/* Validação HTML5 (não usada ativamente no JS, mas bom ter) */
 form input:invalid {
     border-color: var(--danger-color);
 }
