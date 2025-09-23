@@ -1,0 +1,141 @@
+:root {
+    --primary-color: #ffc107; /* Amber */
+    --dark-color: #333;
+    --light-color: #f4f4f4;
+    --danger-color: #f44336;
+    --success-color: #4CAF50;
+    --info-color: #007bff;
+    --border-radius: 8px;
+    --shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    background-color: var(--light-color);
+    color: var(--dark-color);
+    margin: 0;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: var(--primary-color);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+#app-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+#form-section, #lista-section {
+    background: #fff;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    flex: 1;
+    min-width: 300px;
+}
+
+h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+/* Estilos do Formulário */
+form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+form input,
+form select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+}
+
+/* Validação visual */
+form input:invalid {
+    border-color: var(--danger-color);
+}
+
+form input[type="file"] {
+    margin-bottom: 15px;
+    border: none;
+    padding: 0;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-salvar { background-color: var(--success-color); }
+.btn-salvar:hover { background-color: #45a049; }
+
+.btn-limpar { background-color: var(--danger-color); }
+.btn-limpar:hover { background-color: #da190b; }
+
+.cliente-actions button {
+    padding: 5px 10px;
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+.btn-excluir { background-color: var(--danger-color); }
+.btn-excluir:hover { background-color: #da190b; }
+
+.btn-pdf { background-color: var(--info-color); }
+.btn-pdf:hover { background-color: #0069d9; }
+
+/* Estilos da Lista de Clientes */
+#lista-clientes-container {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.cliente-card {
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-left: 5px solid var(--primary-color);
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: var(--border-radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cliente-info h3 {
+    margin: 0 0 5px 0;
+}
+
+.cliente-info p {
+    margin: 0;
+    color: #666;
+}
