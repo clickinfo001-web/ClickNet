@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+
     // --- SELEÇÃO DOS ELEMENTOS DO HTML ---
     const form = document.getElementById('cadastro-form');
     const inputs = {
@@ -67,24 +68,25 @@ document.addEventListener('DOMContentLoaded', () => {
             headStyles: { fillColor: [255, 193, 7] }
         });
 
-        let finalY = doc.lastAutoTable.finalY;
-
         // Adiciona as imagens no PDF, se existirem
-        if (cliente.fotoFrenteBase64) {
-            try {
-                doc.addPage();
-                doc.setFontSize(14);
-                doc.text('Documento - Frente', 14, 20);
-                doc.addImage(cliente.fotoFrenteBase64, 'JPEG', 14, 30, 180, 100);
-            } catch (e) {
-                console.error("Erro ao adicionar imagem da frente ao PDF:", e);
+        if (cliente.fotoFrenteBase64 || cliente.fotoVersoBase64) {
+             doc.addPage();
+             let finalY = 20; // Posição inicial na nova página
+             if (cliente.fotoFrenteBase64) {
+                try {
+                    doc.setFontSize(14);
+                    doc.text('Documento - Frente', 14, finalY);
+                    doc.addImage(cliente.fotoFrenteBase64, 'JPEG', 14, finalY + 10, 180, 100);
+                    finalY += 120; // Atualiza a posição para a próxima imagem
+                } catch (e) { console.error("Erro ao adicionar imagem da frente ao PDF:", e); }
             }
-        }
-        if (cliente.fotoVersoBase64) {
-             if (!cliente.fotoFrenteBase64) doc.addPage(); // Adiciona página só se a da frente não existiu
-            doc.setFontSize(14);
-            doc.text('Documento - Verso', 14, 140);
-            doc.addImage(cliente.fotoVersoBase64, 'JPEG', 14, 150, 180, 100);
+            if (cliente.fotoVersoBase64) {
+                try {
+                    doc.setFontSize(14);
+                    doc.text('Documento - Verso', 14, finalY);
+                    doc.addImage(cliente.fotoVersoBase64, 'JPEG', 14, finalY + 10, 180, 100);
+                } catch (e) { console.error("Erro ao adicionar imagem do verso ao PDF:", e); }
+            }
         }
 
         doc.save(`cadastro_${cliente.nome.replace(/\s/g, '_')}.pdf`);
@@ -99,113 +101,151 @@ document.addEventListener('DOMContentLoaded', () => {
             listaClientesContainer.innerHTML = '<p>Nenhum cliente cadastrado.</p>';
             return;
         }
-
         clientes.forEach((cliente, index) => {
             const card = document.createElement('div');
             card.className = 'cliente-card';
             const info = document.createElement('div');
             info.className = 'cliente-info';
-
             let nomeHtml = `<h3>${cliente.nome}</h3>`;
             if (cliente.fotoFrenteBase64 || cliente.fotoVersoBase64) {
                 nomeHtml = `<h3>${cliente.nome} <i class="bi bi-image-alt icon-imagem-anexada" title="Contém imagens"></i></h3>`;
             }
-
             info.innerHTML = `${nomeHtml}<p>${cliente.plano}</p>`;
-            
             const actions = document.createElement('div');
             actions.className = 'cliente-actions';
             const btnPdf = document.createElement('button');
             btnPdf.className = 'btn-pdf';
             btnPdf.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
             btnPdf.onclick = () => gerarPDF(cliente);
-
             const btnExcluir = document.createElement('button');
             btnExcluir.className = 'btn-excluir';
             btnExcluir.innerHTML = '<i class="bi bi-x-circle-fill"></i> Excluir';
             btnExcluir.onclick = () => excluirCliente(index);
-
             actions.appendChild(btnPdf);
-actions.appendChild(btnExcluir);
+            actions.appendChild(btnExcluir);
             card.appendChild(info);
             card.appendChild(actions);
             listaClientesContainer.appendChild(card);
         });
     };
 
-    // --- FUNÇÕES DE LÓGICA E VALIDAÇÃO ---
-    // NOVO: Helper para ler arquivo como Base64
-    const readFileAsBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            if (!file) {
-                resolve(null);
-                return;
+    // --- FUNÇÃO DE VALIDAÇÃO FINAL (ANTES DE SALVAR) ---
+    const validarCampos = () => {
+        try {
+            // Regra 1.1, 1.5, 1.13
+            if (!/^[A-Za-z\s]+$/.test(inputs.nome.value) && inputs.nome.value) throw new Error('O campo "Nome Completo" deve conter apenas letras.');
+            if (!/^[A-Za-z\s]+$/.test(inputs.apelido.value) && inputs.apelido.value) throw new Error('O campo "Apelido" deve conter apenas letras.');
+            if (!/^[A-Za-z\s]+$/.test(inputs.estadoCivil.value) && inputs.estadoCivil.value) throw new Error('O campo "Estado Civil" deve conter apenas letras.');
+            if (!/^[A-Za-z\s]+$/.test(inputs.indicacao.value) && inputs.indicacao.value) throw new Error('O campo "Indicação" deve conter apenas letras.');
+            // Regra 1.11
+            if (inputs.email.value && !/^\S+@\S+\.\S+$/.test(inputs.email.value)) throw new Error('O formato do E-mail é inválido.');
+            
+            // Verificação de campos obrigatórios
+            const obrigatorios = { nome: "Nome Completo", cpf: "CPF", nascimento: "Data de Nascimento", estadoCivil: "Estado Civil", bairro: "Bairro", rua: "Rua", pontoReferencia: "Ponto de Referência", celular: "Nº de Celular", plano: "Plano", dataPagamento: "Data de Pagamento" };
+            for(const id in obrigatorios) {
+                if(!inputs[id].value.trim()) throw new Error(`O campo "${obrigatorios[id]}" é obrigatório.`);
             }
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-            reader.readAsDataURL(file);
-        });
+            return true;
+        } catch (error) {
+            alert(error.message);
+            return false;
+        }
     };
+    
+    // --- LÓGICA DE ADIÇÃO E EXCLUSÃO ---
+    const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+    });
 
-    const validarCampos = () => { /* ... (código de validação inalterado) ... */ return true; }; // O código de validação anterior continua o mesmo
-
-    // ATUALIZADO: A função agora é 'async' para esperar a leitura dos arquivos
     const adicionarCliente = async (event) => {
         event.preventDefault();
-
-        // if (!validarCampos()) { return; } // Validação omitida para brevidade
-
+        if (!validarCampos()) return;
         try {
-            // Usa Promise.all para ler os dois arquivos em paralelo
             const [fotoFrenteBase64, fotoVersoBase64] = await Promise.all([
                 readFileAsBase64(inputs.fotoFrente.files[0]),
                 readFileAsBase64(inputs.fotoVerso.files[0])
             ]);
-
-            const novoCliente = {
-                timestamp: new Date().toISOString(),
-                fotoFrenteBase64: fotoFrenteBase64,
-                fotoVersoBase64: fotoVersoBase64,
-            };
-            
-            // Pega os valores de todos os outros inputs
-            for (const key in inputs) {
-                if (key !== 'fotoFrente' && key !== 'fotoVerso') {
-                    novoCliente[key] = inputs[key].value;
-                }
-            }
-
+            const novoCliente = { timestamp: new Date().toISOString(), fotoFrenteBase64, fotoVersoBase64 };
+            Object.keys(inputs).forEach(key => {
+                if (!key.startsWith('foto')) novoCliente[key] = inputs[key].value;
+            });
             clientes.push(novoCliente);
             salvarClientes();
             renderizarLista();
             limparFormulario();
-
         } catch (error) {
             console.error("Erro ao processar imagens:", error);
-            alert("Ocorreu um erro ao tentar salvar as imagens. Tente novamente.");
+            alert("Ocorreu um erro ao salvar as imagens.");
         }
     };
-    
+
     const excluirCliente = (index) => {
-        if (confirm(`Tem certeza que deseja excluir ${clientes[index].nome}?`)) {
+        if (confirm(`Tem certeza de que deseja excluir ${clientes[index].nome}?`)) {
             clientes.splice(index, 1);
             salvarClientes();
             renderizarLista();
         }
     };
 
-    // --- MÁSCARAS E EVENT LISTENERS (Inalterados) ---
-    const aplicarMascara = (input, mascara) => { /* ... (código inalterado) ... */ };
-    aplicarMascara(inputs.cpf, (v) => v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'));
-    aplicarMascara(inputs.nascimento, (v) => v.replace(/(\d{2})(\d)/, '$1/$2').replace(/(\d{2})(\d)/, '$1/$2'));
-    aplicarMascara(inputs.celular, (v) => v.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2'));
-    ['numeroCasa', 'dataPagamento'].forEach(id => { inputs[id].addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, ''); }); });
-    ['nome', 'apelido', 'estadoCivil', 'indicacao'].forEach(id => { inputs[id].addEventListener('input', e => { e.target.value = e.target.value.replace(/[^A-Za-z\s]/g, ''); }); });
-    
+    // --- MÁSCARAS E RESTRIÇÕES DE INPUT (VERSÃO CORRIGIDA) ---
+    const aplicarRestricao = (input, regexFiltro) => {
+        input.addEventListener('input', e => {
+            const valorOriginal = e.target.value;
+            const valorFiltrado = valorOriginal.replace(regexFiltro, '');
+            if (valorOriginal !== valorFiltrado) {
+                e.target.value = valorFiltrado;
+            }
+        });
+    };
+
+    // Regras 1.1, 1.2, 1.5, 1.13: Permitir apenas letras e espaços
+    aplicarRestricao(inputs.nome, /[^A-Za-z\s]/g);
+    aplicarRestricao(inputs.apelido, /[^A-Za-z\s]/g);
+    aplicarRestricao(inputs.estadoCivil, /[^A-Za-z\s]/g);
+    aplicarRestricao(inputs.indicacao, /[^A-Za-z\s]/g);
+
+    // Regras 1.8, 1.12: Permitir apenas números
+    aplicarRestricao(inputs.numeroCasa, /\D/g);
+    aplicarRestricao(inputs.dataPagamento, /\D/g);
+
+    // Regra 1.3: Autoformatação do CPF
+    inputs.cpf.addEventListener('input', e => {
+        let v = e.target.value.replace(/\D/g, '');
+        v = v.slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        e.target.value = v;
+    });
+
+    // Regra 1.4: Autoformatação da Data de Nascimento
+    inputs.nascimento.addEventListener('input', e => {
+        let v = e.target.value.replace(/\D/g, '');
+        v = v.slice(0, 8);
+        if (v.length > 4) v = v.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
+        else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+        e.target.value = v;
+    });
+
+    // Regra 1.10: Autoformatação do Celular
+    inputs.celular.addEventListener('input', e => {
+        let v = e.target.value.replace(/\D/g, '');
+        v = v.slice(0, 11);
+        if (v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        else if (v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+        else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+        else if (v.length > 0) v = v.replace(/(\d{0,2})/, '($1');
+        e.target.value = v;
+    });
+
+    // --- EVENT LISTENERS FINAIS ---
     form.addEventListener('submit', adicionarCliente);
     btnLimpar.addEventListener('click', limparFormulario);
 
-    // Inicialização
+    // --- INICIALIZAÇÃO ---
     carregarClientes();
 });
