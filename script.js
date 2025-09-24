@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- SELEÇÃO DOS ELEMENTOS DO HTML ---
+    // --- SELEÇÃO DE TODOS OS ELEMENTOS ---
     const form = document.getElementById('cadastro-form');
     const inputs = {
         nome: document.getElementById('nome'),
@@ -20,229 +20,333 @@ document.addEventListener('DOMContentLoaded', () => {
         fotoFrente: document.getElementById('fotoFrente'),
         fotoVerso: document.getElementById('fotoVerso'),
     };
+    const btnSalvar = document.getElementById('btn-salvar');
     const btnLimpar = document.getElementById('btn-limpar');
     const listaClientesContainer = document.getElementById('lista-clientes-container');
+    const inputBusca = document.getElementById('input-busca');
+    const selectOrdenacao = document.getElementById('select-ordenacao');
+    const imageModal = document.getElementById('image-modal');
+    const modalImagePreview = document.getElementById('modal-image-preview');
+    const modalCloseBtn = document.querySelector('.modal-close-btn');
+    const toast = document.getElementById('toast-notification');
 
-    let clientes = [];
+    // --- ESTADO DA APLICAÇÃO ---
+    let clientes = []; // Lista principal de clientes
+    let clientesExibidos = []; // Lista para exibição (afetada por busca e ordenação)
 
     // --- FUNÇÕES DE PERSISTÊNCIA (Local Storage) ---
     const carregarClientes = () => {
-        const clientesJSON = localStorage.getItem('clientes') || '[]';
-        clientes = JSON.parse(clientesJSON);
-        renderizarLista();
+        clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
+        ordenarEFiltrarClientes();
     };
 
     const salvarClientes = () => {
         localStorage.setItem('clientes', JSON.stringify(clientes));
     };
 
-    // --- FUNÇÃO DE GERAÇÃO DE PDF ---
-    const gerarPDF = (cliente) => {
+    // --- FUNÇÕES DE UI (MODAL, TOAST, FEEDBACK) ---
+    const showToast = (message, isError = false) => {
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--success-color)';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    };
+
+    const showImageModal = (base64) => {
+        modalImagePreview.src = base64;
+        imageModal.classList.add('visible');
+    };
+
+    const hideImageModal = () => {
+        imageModal.classList.remove('visible');
+    };
+    
+    const setSavingState = (isSaving) => {
+        btnSalvar.disabled = isSaving;
+        btnSalvar.classList.toggle('loading', isSaving);
+    };
+
+    // --- LÓGICA DE VALIDAÇÃO EM TEMPO REAL ---
+    const regrasValidacao = {
+        nome: { required: true, pattern: /^[A-Za-z\s]+$/, message: 'Apenas letras e espaços.' },
+        apelido: { pattern: /^[A-Za-z\s]+$/, message: 'Apenas letras e espaços.' },
+        cpf: { required: true, minLength: 14, message: 'CPF inválido.' },
+        nascimento: { required: true, minLength: 10, message: 'Data inválida.' },
+        estadoCivil: { required: true, pattern: /^[A-Za-z\s]+$/, message: 'Apenas letras.' },
+        bairro: { required: true },
+        rua: { required: true },
+        numeroCasa: { pattern: /^\d*$/, message: 'Apenas números.' },
+        pontoReferencia: { required: true },
+        celular: { required: true, minLength: 15, message: 'Celular inválido.' },
+        email: { pattern: /^\S+@\S+\.\S+$/, message: 'E-mail inválido.' },
+        plano: { required: true },
+        dataPagamento: { required: true, pattern: /^\d+$/, message: 'Apenas números.' },
+        indicacao: { pattern: /^[A-Za-z\s]+$/, message: 'Apenas letras e espaços.' }
+    };
+
+    const validarCampo = (inputId) => {
+        const input = inputs[inputId];
+        const rule = regrasValidacao[inputId];
+        const errorMessageElement = input.closest('.field-group').querySelector('.error-message');
+        let isValid = true;
+        let errorMessage = '';
+
+        if (!rule) return true;
+
+        const value = input.value.trim();
+
+        if (rule.required && !value) {
+            isValid = false;
+            errorMessage = 'Campo obrigatório.';
+        } else if (value) {
+            if (rule.minLength && value.length < rule.minLength) {
+                isValid = false;
+                errorMessage = rule.message || `Mínimo de ${rule.minLength} caracteres.`;
+            }
+            if (rule.pattern && !rule.pattern.test(value)) {
+                isValid = false;
+                errorMessage = rule.message || 'Formato inválido.';
+            }
+        }
+        
+        input.classList.toggle('invalid', !isValid);
+        if (errorMessageElement) errorMessageElement.textContent = errorMessage;
+        return isValid;
+    };
+
+    const validarFormulario = () => {
+        return Object.keys(regrasValidacao).every(id => validarCampo(id));
+    };
+
+    // --- LÓGICA DE BUSCA E ORDENAÇÃO ---
+    const ordenarEFiltrarClientes = () => {
+        let processados = [...clientes];
+        
+        // Filtragem por Busca
+        const termoBusca = inputBusca.value.toLowerCase();
+        if (termoBusca) {
+            processados = processados.filter(c => 
+                c.nome.toLowerCase().includes(termoBusca) || 
+                c.cpf.includes(termoBusca)
+            );
+        }
+
+        // Ordenação
+        const tipoOrdenacao = selectOrdenacao.value;
+        processados.sort((a, b) => {
+            switch(tipoOrdenacao) {
+                case 'nome-asc': return a.nome.localeCompare(b.nome);
+                case 'nome-desc': return b.nome.localeCompare(a.nome);
+                case 'data-asc': return new Date(a.timestamp) - new Date(b.timestamp);
+                case 'data-desc':
+                default: return new Date(b.timestamp) - new Date(a.timestamp);
+            }
+        });
+
+        clientesExibidos = processados;
+        renderizarLista();
+    };
+    
+    // --- RENDERIZAÇÃO DA LISTA ---
+    const renderizarLista = () => {
+        listaClientesContainer.innerHTML = '';
+        if (clientesExibidos.length === 0) {
+            listaClientesContainer.innerHTML = '<p>Nenhum cliente encontrado.</p>';
+            return;
+        }
+        clientesExibidos.forEach((cliente) => {
+            const card = document.createElement('div');
+            card.className = 'cliente-card';
+
+            const temImagem = cliente.fotoFrenteBase64 || cliente.fotoVersoBase64;
+            const nomeHtml = `<h3>${cliente.nome} ${temImagem ? `<i class="bi bi-image-alt icon-imagem-anexada" title="Contém imagens"></i>` : ''}</h3>`;
+
+            card.innerHTML = `
+                <div class="cliente-info">
+                    ${nomeHtml}
+                    <p>${cliente.plano}</p>
+                </div>
+                <div class="cliente-actions">
+                    <button class="btn-pdf"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</button>
+                    <button class="btn-excluir"><i class="bi bi-x-circle-fill"></i> Excluir</button>
+                </div>
+            `;
+            
+            card.querySelector('.btn-pdf').addEventListener('click', () => gerarPDF(cliente));
+            card.querySelector('.btn-excluir').addEventListener('click', () => excluirCliente(cliente));
+            if(temImagem) {
+                card.querySelector('.icon-imagem-anexada').addEventListener('click', () => showImageModal(cliente.fotoFrenteBase64 || cliente.fotoVersoBase64));
+            }
+
+            listaClientesContainer.appendChild(card);
+        });
+    };
+
+    // --- GERAÇÃO DE PDF APRIMORADA ---
+    const getImageDimensions = (base64) => new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.width, height: img.height });
+        img.src = base64;
+    });
+
+    const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-
+        
+        doc.setFont('Poppins', 'bold');
         doc.setFontSize(18);
         doc.text('Ficha Cadastral - Clicknet', 14, 22);
-        
+
+        doc.setFont('Poppins', 'normal');
         const tableData = [
-            ['Nome Completo', cliente.nome],
-            ['CPF', cliente.cpf],
-            ['Data de Nascimento', cliente.nascimento],
-            ['Estado Civil', cliente.estadoCivil],
-            ['Endereço', `${cliente.rua}, ${cliente.numeroCasa || 'S/N'} - ${cliente.bairro}`],
-            ['Ponto de Referência', cliente.pontoReferencia],
-            ['Nº de Celular', cliente.celular],
-            ['Plano', cliente.plano],
-            ['Data de Pagamento', `Dia ${cliente.dataPagamento}`]
+            ['Nome Completo', cliente.nome], ['CPF', cliente.cpf], ['Data de Nascimento', cliente.nascimento], ['Estado Civil', cliente.estadoCivil],
+            ['Endereço', `${cliente.rua}, ${cliente.numeroCasa || 'S/N'} - ${cliente.bairro}`], ['Ponto de Referência', cliente.pontoReferencia],
+            ['Nº de Celular', cliente.celular], ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`]
         ];
-        
         if (cliente.apelido) tableData.splice(1, 0, ['Apelido', cliente.apelido]);
         if (cliente.email) tableData.push(['E-mail', cliente.email]);
         if (cliente.indicacao) tableData.push(['Indicação', cliente.indicacao]);
 
         doc.autoTable({
-            startY: 30,
-            head: [['Campo', 'Valor']],
-            body: tableData,
-            theme: 'striped',
-            headStyles: { fillColor: [255, 193, 7] }
+            startY: 30, head: [['Campo', 'Valor']], body: tableData, theme: 'striped',
+            headStyles: { fillColor: [255, 193, 7], textColor: 255, fontStyle: 'bold', font: 'Poppins' },
+            bodyStyles: { font: 'Poppins' }
         });
 
-        // Adiciona as imagens no PDF, se existirem
         if (cliente.fotoFrenteBase64 || cliente.fotoVersoBase64) {
-             doc.addPage();
-             let finalY = 20; // Posição inicial na nova página
-             if (cliente.fotoFrenteBase64) {
-                try {
-                    doc.setFontSize(14);
-                    doc.text('Documento - Frente', 14, finalY);
-                    doc.addImage(cliente.fotoFrenteBase64, 'JPEG', 14, finalY + 10, 180, 100);
-                    finalY += 120; // Atualiza a posição para a próxima imagem
-                } catch (e) { console.error("Erro ao adicionar imagem da frente ao PDF:", e); }
-            }
-            if (cliente.fotoVersoBase64) {
-                try {
-                    doc.setFontSize(14);
-                    doc.text('Documento - Verso', 14, finalY);
-                    doc.addImage(cliente.fotoVersoBase64, 'JPEG', 14, finalY + 10, 180, 100);
-                } catch (e) { console.error("Erro ao adicionar imagem do verso ao PDF:", e); }
-            }
+            doc.addPage();
+            let currentY = 20;
+            const pageContentWidth = doc.internal.pageSize.getWidth() - 28;
+
+            const addImageToPdf = async (base64, title) => {
+                if (!base64) return;
+                const dims = await getImageDimensions(base64);
+                const aspectRatio = dims.width / dims.height;
+                let imgWidth = pageContentWidth;
+                let imgHeight = imgWidth / aspectRatio;
+                
+                const maxHeight = 120;
+                if(imgHeight > maxHeight) {
+                    imgHeight = maxHeight;
+                    imgWidth = imgHeight * aspectRatio;
+                }
+                
+                doc.setFont('Poppins', 'bold');
+                doc.setFontSize(14);
+                doc.text(title, 14, currentY);
+                doc.addImage(base64, 'JPEG', 14, currentY + 5, imgWidth, imgHeight);
+                currentY += imgHeight + 20;
+            };
+
+            await addImageToPdf(cliente.fotoFrenteBase64, 'Documento - Frente');
+            await addImageToPdf(cliente.fotoVersoBase64, 'Documento - Verso');
         }
 
         doc.save(`cadastro_${cliente.nome.replace(/\s/g, '_')}.pdf`);
     };
 
-    // --- RENDERIZAÇÃO E FORMULÁRIO ---
-    const limparFormulario = () => form.reset();
-
-    const renderizarLista = () => {
-        listaClientesContainer.innerHTML = '';
-        if (clientes.length === 0) {
-            listaClientesContainer.innerHTML = '<p>Nenhum cliente cadastrado.</p>';
-            return;
-        }
-        clientes.forEach((cliente, index) => {
-            const card = document.createElement('div');
-            card.className = 'cliente-card';
-            const info = document.createElement('div');
-            info.className = 'cliente-info';
-            let nomeHtml = `<h3>${cliente.nome}</h3>`;
-            if (cliente.fotoFrenteBase64 || cliente.fotoVersoBase64) {
-                nomeHtml = `<h3>${cliente.nome} <i class="bi bi-image-alt icon-imagem-anexada" title="Contém imagens"></i></h3>`;
-            }
-            info.innerHTML = `${nomeHtml}<p>${cliente.plano}</p>`;
-            const actions = document.createElement('div');
-            actions.className = 'cliente-actions';
-            const btnPdf = document.createElement('button');
-            btnPdf.className = 'btn-pdf';
-            btnPdf.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
-            btnPdf.onclick = () => gerarPDF(cliente);
-            const btnExcluir = document.createElement('button');
-            btnExcluir.className = 'btn-excluir';
-            btnExcluir.innerHTML = '<i class="bi bi-x-circle-fill"></i> Excluir';
-            btnExcluir.onclick = () => excluirCliente(index);
-            actions.appendChild(btnPdf);
-            actions.appendChild(btnExcluir);
-            card.appendChild(info);
-            card.appendChild(actions);
-            listaClientesContainer.appendChild(card);
-        });
-    };
-
-    // --- FUNÇÃO DE VALIDAÇÃO FINAL (ANTES DE SALVAR) ---
-    const validarCampos = () => {
-        try {
-            // Regra 1.1, 1.5, 1.13
-            if (!/^[A-Za-z\s]+$/.test(inputs.nome.value) && inputs.nome.value) throw new Error('O campo "Nome Completo" deve conter apenas letras.');
-            if (!/^[A-Za-z\s]+$/.test(inputs.apelido.value) && inputs.apelido.value) throw new Error('O campo "Apelido" deve conter apenas letras.');
-            if (!/^[A-Za-z\s]+$/.test(inputs.estadoCivil.value) && inputs.estadoCivil.value) throw new Error('O campo "Estado Civil" deve conter apenas letras.');
-            if (!/^[A-Za-z\s]+$/.test(inputs.indicacao.value) && inputs.indicacao.value) throw new Error('O campo "Indicação" deve conter apenas letras.');
-            // Regra 1.11
-            if (inputs.email.value && !/^\S+@\S+\.\S+$/.test(inputs.email.value)) throw new Error('O formato do E-mail é inválido.');
-            
-            // Verificação de campos obrigatórios
-            const obrigatorios = { nome: "Nome Completo", cpf: "CPF", nascimento: "Data de Nascimento", estadoCivil: "Estado Civil", bairro: "Bairro", rua: "Rua", pontoReferencia: "Ponto de Referência", celular: "Nº de Celular", plano: "Plano", dataPagamento: "Data de Pagamento" };
-            for(const id in obrigatorios) {
-                if(!inputs[id].value.trim()) throw new Error(`O campo "${obrigatorios[id]}" é obrigatório.`);
-            }
-            return true;
-        } catch (error) {
-            alert(error.message);
-            return false;
-        }
-    };
-    
-    // --- LÓGICA DE ADIÇÃO E EXCLUSÃO ---
+    // --- LÓGICA PRINCIPAL DE CRUD ---
     const readFileAsBase64 = (file) => new Promise((resolve, reject) => {
         if (!file) return resolve(null);
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
+        reader.onerror = reject;
         reader.readAsDataURL(file);
     });
 
+    // ***** FUNÇÃO CORRIGIDA *****
+    const limparFormulario = () => {
+        form.reset(); // Limpa a maioria dos campos
+
+        // Limpa manualmente os textos dos nomes dos arquivos
+        document.getElementById('fotoFrente-filename').textContent = 'Nenhum arquivo selecionado';
+        document.getElementById('fotoVerso-filename').textContent = 'Nenhum arquivo selecionado';
+
+        // Remove todas as classes 'invalid' e mensagens de erro
+        Object.keys(inputs).forEach(id => {
+            const input = inputs[id];
+            input.classList.remove('invalid');
+            const errorElement = input.closest('.field-group').querySelector('.error-message');
+            if(errorElement) {
+                errorElement.textContent = '';
+            }
+        });
+    };
+
     const adicionarCliente = async (event) => {
         event.preventDefault();
-        if (!validarCampos()) return;
+        if (!validarFormulario()) {
+            showToast('Por favor, corrija os erros no formulário.', true);
+            return;
+        }
+
+        setSavingState(true);
+        let novoCliente;
+
         try {
             const [fotoFrenteBase64, fotoVersoBase64] = await Promise.all([
                 readFileAsBase64(inputs.fotoFrente.files[0]),
                 readFileAsBase64(inputs.fotoVerso.files[0])
             ]);
-            const novoCliente = { timestamp: new Date().toISOString(), fotoFrenteBase64, fotoVersoBase64 };
+            
+            novoCliente = { timestamp: new Date().toISOString(), fotoFrenteBase64, fotoVersoBase64 };
             Object.keys(inputs).forEach(key => {
                 if (!key.startsWith('foto')) novoCliente[key] = inputs[key].value;
             });
+
             clientes.push(novoCliente);
             salvarClientes();
-            renderizarLista();
-            limparFormulario();
+
         } catch (error) {
-            console.error("Erro ao processar imagens:", error);
-            alert("Ocorreu um erro ao salvar as imagens.");
+            console.error("Erro ao processar e salvar:", error);
+            showToast("Ocorreu um erro ao salvar os dados.", true);
+            setSavingState(false);
+            return; // Interrompe a execução em caso de erro no salvamento
         }
+
+        // Se o try foi bem-sucedido, as operações de UI são executadas aqui
+        ordenarEFiltrarClientes();
+        limparFormulario();
+        showToast('Cliente salvo com sucesso!');
+        setSavingState(false);
     };
 
-    const excluirCliente = (index) => {
-        if (confirm(`Tem certeza de que deseja excluir ${clientes[index].nome}?`)) {
-            clientes.splice(index, 1);
+    const excluirCliente = (clienteParaExcluir) => {
+        if (confirm(`Tem certeza de que deseja excluir ${clienteParaExcluir.nome}?`)) {
+            clientes = clientes.filter(c => c.timestamp !== clienteParaExcluir.timestamp);
             salvarClientes();
-            renderizarLista();
+            ordenarEFiltrarClientes();
+            showToast('Cliente excluído.');
         }
     };
+    
+    // --- SETUP DOS EVENT LISTENERS ---
+    Object.keys(regrasValidacao).forEach(id => {
+        inputs[id].addEventListener('blur', () => validarCampo(id));
+    });
 
-    // --- MÁSCARAS E RESTRIÇÕES DE INPUT (VERSÃO CORRIGIDA) ---
-    const aplicarRestricao = (input, regexFiltro) => {
-        input.addEventListener('input', e => {
-            const valorOriginal = e.target.value;
-            const valorFiltrado = valorOriginal.replace(regexFiltro, '');
-            if (valorOriginal !== valorFiltrado) {
-                e.target.value = valorFiltrado;
-            }
+    ['cpf', 'nascimento', 'celular'].forEach(id => {
+        inputs[id].addEventListener('input', e => {
+            let v = e.target.value.replace(/\D/g, '');
+            if (id === 'cpf') e.target.value = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            if (id === 'nascimento') e.target.value = v.replace(/(\d{2})(\d)/, '$1/$2').replace(/(\d{2})(\d)/, '$1/$2');
+            if (id === 'celular') e.target.value = v.replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
         });
-    };
-
-    // Regras 1.1, 1.2, 1.5, 1.13: Permitir apenas letras e espaços
-    aplicarRestricao(inputs.nome, /[^A-Za-z\s]/g);
-    aplicarRestricao(inputs.apelido, /[^A-Za-z\s]/g);
-    aplicarRestricao(inputs.estadoCivil, /[^A-Za-z\s]/g);
-    aplicarRestricao(inputs.indicacao, /[^A-Za-z\s]/g);
-
-    // Regras 1.8, 1.12: Permitir apenas números
-    aplicarRestricao(inputs.numeroCasa, /\D/g);
-    aplicarRestricao(inputs.dataPagamento, /\D/g);
-
-    // Regra 1.3: Autoformatação do CPF
-    inputs.cpf.addEventListener('input', e => {
-        let v = e.target.value.replace(/\D/g, '');
-        v = v.slice(0, 11);
-        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
-        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
-        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
-        e.target.value = v;
     });
+    
+    inputBusca.addEventListener('input', ordenarEFiltrarClientes);
+    selectOrdenacao.addEventListener('change', ordenarEFiltrarClientes);
 
-    // Regra 1.4: Autoformatação da Data de Nascimento
-    inputs.nascimento.addEventListener('input', e => {
-        let v = e.target.value.replace(/\D/g, '');
-        v = v.slice(0, 8);
-        if (v.length > 4) v = v.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
-        else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,2})/, '$1/$2');
-        e.target.value = v;
+    modalCloseBtn.addEventListener('click', hideImageModal);
+    imageModal.addEventListener('click', (e) => { if(e.target === imageModal) hideImageModal(); });
+
+    ['fotoFrente', 'fotoVerso'].forEach(id => {
+        inputs[id].addEventListener('change', () => {
+            const filename = inputs[id].files.length > 0 ? inputs[id].files[0].name : 'Nenhum arquivo selecionado';
+            document.getElementById(`${id}-filename`).textContent = filename;
+        });
     });
-
-    // Regra 1.10: Autoformatação do Celular
-    inputs.celular.addEventListener('input', e => {
-        let v = e.target.value.replace(/\D/g, '');
-        v = v.slice(0, 11);
-        if (v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-        else if (v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-        else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
-        else if (v.length > 0) v = v.replace(/(\d{0,2})/, '($1');
-        e.target.value = v;
-    });
-
-    // --- EVENT LISTENERS FINAIS ---
+    
     form.addEventListener('submit', adicionarCliente);
     btnLimpar.addEventListener('click', limparFormulario);
 
