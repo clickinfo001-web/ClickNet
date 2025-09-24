@@ -1,16 +1,23 @@
+/* --- Importações e Variáveis Globais --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
 :root {
-    --primary-color: #ffc107; /* Amber */
-    --dark-color: #333;
-    --light-color: #f4f4f4;
+    --primary-color: #ffc107;
+    --primary-dark: #d9a406;
+    --dark-color: #212529;
+    --light-color: #f8f9fa;
+    --gray-color: #6c757d;
     --danger-color: #dc3545;
     --success-color: #198754;
     --info-color: #0d6efd;
     --border-radius: 8px;
-    --shadow: 0 2px 5px rgba(0,0,0,0.1);
+    --shadow: 0 4px 8px rgba(0,0,0,0.05);
+    --transition-speed: 0.3s;
 }
 
+/* --- Base e Layout --- */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.6;
     background-color: var(--light-color);
     color: var(--dark-color);
@@ -18,143 +25,210 @@ body {
     padding: 20px;
 }
 
-header h1, h2 {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-header h1 i, h2 i {
-    margin-right: 10px;
-    color: var(--primary-color);
-}
-
 #app-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 #form-section, #lista-section {
     background: #fff;
-    padding: 20px;
+    padding: 25px 30px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     flex: 1;
-    min-width: 300px;
 }
 
-h2 {
-    border-bottom: 2px solid var(--primary-color);
-    padding-bottom: 10px;
+#form-section { flex-basis: 40%; }
+#lista-section { flex-basis: 55%; }
+
+/* --- Cabeçalho e Títulos --- */
+header h1, h2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
 }
-h2 i { color: var(--dark-color); }
 
+header h1 {
+    color: var(--primary-dark);
+    font-size: 2.5em;
+    margin-bottom: 30px;
+}
+header h1 i { margin-right: 15px; color: var(--primary-color); }
+h2 i { margin-right: 10px; }
 
-/* Estilos do Formulário */
+/* --- Formulário --- */
+.field-group { margin-bottom: 15px; }
 form label {
     display: flex;
     align-items: center;
     margin-bottom: 5px;
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 0.9em;
 }
-
-form label i {
-    margin-right: 8px;
-    color: var(--primary-color);
-    font-size: 1.1em;
-}
-
-form input,
-form select {
+form label i { margin-right: 8px; color: var(--primary-color); font-size: 1.1em; }
+form input, form select {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
+    padding: 12px;
+    border: 1px solid #ced4da;
     border-radius: var(--border-radius);
     box-sizing: border-box;
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+form input:focus, form select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25);
 }
 
-/* Validação HTML5 (não usada ativamente no JS, mas bom ter) */
-form input:invalid {
-    border-color: var(--danger-color);
+/* --- Validação em Tempo Real --- */
+.error-message {
+    color: var(--danger-color);
+    font-size: 0.8em;
+    height: 1.2em;
+    display: block;
+    margin-top: 3px;
+}
+input.invalid { border-color: var(--danger-color); }
+
+/* --- Estilização do Input de Arquivo --- */
+.file-input-hidden { display: none; }
+.file-input-label {
+    background-color: #f8f9fa;
+    border: 1px dashed #ced4da;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+}
+.file-input-label:hover { background-color: #e9ecef; }
+.file-input-filename {
+    font-size: 0.8em;
+    color: var(--gray-color);
+    margin-top: 5px;
+    display: block;
 }
 
-form input[type="file"] {
-    margin-bottom: 15px;
-    border: none;
-    padding: 0;
-}
-
-.form-buttons {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}
-
+/* --- Botões e Spinner --- */
+.form-buttons { display: flex; gap: 15px; margin-top: 25px; }
 button {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 10px 20px;
+    padding: 12px 20px;
     border: none;
     border-radius: var(--border-radius);
     color: #fff;
-    font-weight: bold;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color var(--transition-speed), transform var(--transition-speed);
 }
-
+button:hover { transform: translateY(-2px); }
 .btn-salvar { background-color: var(--success-color); }
 .btn-salvar:hover { background-color: #157347; }
-
+.btn-salvar:disabled { background-color: var(--gray-color); cursor: not-allowed; }
 .btn-limpar { background-color: var(--danger-color); }
 .btn-limpar:hover { background-color: #bb2d3b; }
 
-.cliente-actions button {
-    padding: 5px 10px;
-    font-size: 0.8em;
-    margin-left: 5px;
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    display: none;
 }
+.btn-salvar.loading .spinner { display: block; }
+.btn-salvar.loading .btn-text { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.btn-excluir { background-color: var(--danger-color); }
-.btn-excluir:hover { background-color: #bb2d3b; }
+/* --- Lista de Clientes --- */
+.lista-header { margin-bottom: 20px; }
+.lista-controles { display: flex; gap: 15px; margin-top: 15px; }
+.lista-controles input, .lista-controles select { flex: 1; }
 
-.btn-pdf { background-color: var(--info-color); }
-.btn-pdf:hover { background-color: #0b5ed7; }
-
-/* Estilos da Lista de Clientes */
-#lista-clientes-container {
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
+#lista-clientes-container { max-height: 70vh; overflow-y: auto; padding-right: 5px; }
 .cliente-card {
-    background: #f9f9f9;
+    background: #fdfdfd;
     border: 1px solid #eee;
-    border-left: 5px solid var(--primary-color);
     padding: 15px;
     margin-bottom: 10px;
     border-radius: var(--border-radius);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: transform var(--transition-speed), box-shadow var(--transition-speed);
 }
+.cliente-card:hover { transform: scale(1.02); box-shadow: var(--shadow); }
+.cliente-info h3 { margin: 0 0 5px 0; font-weight: 600; }
+.cliente-info p { margin: 0; color: var(--gray-color); font-size: 0.9em; }
+.cliente-info .icon-imagem-anexada { color: var(--info-color); cursor: pointer; }
+.cliente-actions button {
+    padding: 6px 12px;
+    font-size: 0.9em;
+    margin-left: 8px;
+}
+.btn-pdf { background-color: var(--info-color); }
+.btn-excluir { background-color: var(--danger-color); }
 
-.cliente-info h3 {
-    margin: 0 0 5px 0;
+/* --- Modal de Imagem --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-speed), visibility var(--transition-speed);
 }
-
-.cliente-info p {
-    margin: 0;
-    color: #666;
+.modal-overlay.visible { opacity: 1; visibility: visible; }
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
 }
+.modal-close-btn {
+    position: absolute;
+    top: 10px; right: 15px;
+    font-size: 2em;
+    cursor: pointer;
+    color: var(--gray-color);
+}
+#modal-image-preview { max-width: 100%; max-height: 80vh; }
 
-.cliente-info .icon-imagem-anexada {
-    color: var(--info-color);
-    margin-left: 8px;
-    font-size: 0.8em;
+/* --- Toast Notification --- */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--success-color);
+    color: #fff;
+    padding: 15px 25px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s, bottom 0.5s;
+}
+.toast.show { opacity: 1; visibility: visible; bottom: 30px; }
+
+/* --- Responsividade para Celulares --- */
+@media (max-width: 992px) {
+    #app-container { flex-direction: column; }
+    body { padding: 15px; }
+    #form-section, #lista-section { flex-basis: 100%; }
 }
