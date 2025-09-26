@@ -132,7 +132,7 @@ button {
 button:hover { transform: translateY(-2px); }
 .btn-salvar { background-color: var(--success-color); }
 .btn-salvar:hover { background-color: #157347; }
-.btn-salvar:disabled { background-color: var(--gray-color); cursor: not-allowed; }
+.btn-salvar:disabled { background-color: var(--gray-color); cursor: not-allowed; transform: none; }
 .btn-limpar { background-color: var(--danger-color); }
 .btn-limpar:hover { background-color: #bb2d3b; }
 
@@ -190,6 +190,7 @@ button:hover { transform: translateY(-2px); }
     opacity: 0;
     visibility: hidden;
     transition: opacity var(--transition-speed), visibility var(--transition-speed);
+    z-index: 1000;
 }
 .modal-overlay.visible { opacity: 1; visibility: visible; }
 .modal-content {
@@ -215,7 +216,6 @@ button:hover { transform: translateY(-2px); }
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--success-color);
     color: #fff;
     padding: 15px 25px;
     border-radius: var(--border-radius);
@@ -223,6 +223,7 @@ button:hover { transform: translateY(-2px); }
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.5s, bottom 0.5s;
+    z-index: 1001;
 }
 .toast.show { opacity: 1; visibility: visible; bottom: 30px; }
 
