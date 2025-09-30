@@ -1,24 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- SELEÇÃO DE TODOS OS ELEMENTOS ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCAzuRmDTH6IZwgg73bEGUj1I-hNGMCYE",
+      authDomain: "clicknet-9a4cd.firebaseapp.com",
+      projectId: "clicknet-9a4cd",
+      storageBucket: "clicknet-9a4cd.appspot.com",
+      messagingSenderId: "756016012301",
+      appId: "1:756016012301:web:bc878607facd4aeaa30944"
+    };
+
+    // Inicializa o Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // --- SELEÇÃO DE ELEMENTOS ---
     const form = document.getElementById('cadastro-form');
     const inputs = {
-        nome: document.getElementById('nome'),
-        apelido: document.getElementById('apelido'),
-        cpf: document.getElementById('cpf'),
-        nascimento: document.getElementById('nascimento'),
-        estadoCivil: document.getElementById('estadoCivil'),
-        bairro: document.getElementById('bairro'),
-        rua: document.getElementById('rua'),
-        numeroCasa: document.getElementById('numeroCasa'),
-        pontoReferencia: document.getElementById('pontoReferencia'),
-        celular: document.getElementById('celular'),
-        email: document.getElementById('email'),
-        plano: document.getElementById('plano'),
-        dataPagamento: document.getElementById('dataPagamento'),
-        indicacao: document.getElementById('indicacao'),
-        fotoFrente: document.getElementById('fotoFrente'),
-        fotoVerso: document.getElementById('fotoVerso'),
+        nome: document.getElementById('nome'), apelido: document.getElementById('apelido'), cpf: document.getElementById('cpf'),
+        nascimento: document.getElementById('nascimento'), estadoCivil: document.getElementById('estadoCivil'), bairro: document.getElementById('bairro'),
+        rua: document.getElementById('rua'), numeroCasa: document.getElementById('numeroCasa'), pontoReferencia: document.getElementById('pontoReferencia'),
+        celular: document.getElementById('celular'), email: document.getElementById('email'), plano: document.getElementById('plano'),
+        dataPagamento: document.getElementById('dataPagamento'), indicacao: document.getElementById('indicacao'),
+        fotoFrente: document.getElementById('fotoFrente'), fotoVerso: document.getElementById('fotoVerso'),
     };
     const btnSalvar = document.getElementById('btn-salvar');
     const btnLimpar = document.getElementById('btn-limpar');
@@ -34,29 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let clientes = [];
     let clientesExibidos = [];
 
-    // --- FUNÇÕES DE PERSISTÊNCIA ---
-    const carregarClientes = () => {
-        clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
-        ordenarEFiltrarClientes();
-    };
+    // --- FUNÇÕES DE PERSISTÊNCIA E UI ---
+    const carregarClientes = () => { clientes = JSON.parse(localStorage.getItem('clientes') || '[]'); ordenarEFiltrarClientes(); };
     const salvarClientes = () => localStorage.setItem('clientes', JSON.stringify(clientes));
-
-    // --- FUNÇÕES DE UI ---
-    const showToast = (message, isError = false) => {
-        toast.textContent = message;
-        toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--success-color)';
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
-    };
-    const showImageModal = (base64) => {
-        modalImagePreview.src = base64;
-        imageModal.classList.add('visible');
-    };
+    const showToast = (message, isError = false) => { toast.textContent = message; toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--success-color)'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); };
+    const showImageModal = (base64) => { modalImagePreview.src = base64; imageModal.classList.add('visible'); };
     const hideImageModal = () => imageModal.classList.remove('visible');
-    const setSavingState = (isSaving) => {
-        btnSalvar.disabled = isSaving;
-        btnSalvar.classList.toggle('loading', isSaving);
-    };
+    const setSavingState = (isSaving) => { btnSalvar.disabled = isSaving; btnSalvar.classList.toggle('loading', isSaving); };
 
     // --- VALIDAÇÃO (COM REGRAS ATUALIZADAS) ---
     const regrasValidacao = {
@@ -75,26 +62,20 @@ document.addEventListener('DOMContentLoaded', () => {
         dataPagamento: { required: true, pattern: /^\d+$/, message: 'Apenas números.' },
         indicacao: { pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$/, message: 'Apenas letras, acentos e hífens.' }
     };
-
     const validarCampo = (inputId) => {
         const input = inputs[inputId];
         const rule = regrasValidacao[inputId];
         const errorMessageElement = input.closest('.field-group').querySelector('.error-message');
         let isValid = true;
         let errorMessage = '';
-
         if (!rule) return true;
         const value = input.value.trim();
-
-        if (rule.required && !value) {
-            isValid = false;
-            errorMessage = 'Campo obrigatório.';
-        } else if (value) {
+        if (rule.required && !value) { isValid = false; errorMessage = 'Campo obrigatório.'; } 
+        else if (value) {
             if (rule.minLength && value.length < rule.minLength) isValid = false;
             if (rule.pattern && !rule.pattern.test(value)) isValid = false;
             if(!isValid) errorMessage = rule.message || 'Formato inválido.';
         }
-        
         input.classList.toggle('invalid', !isValid);
         if (errorMessageElement) errorMessageElement.textContent = errorMessage;
         return isValid;
@@ -140,11 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- PDF (COM LAYOUT MELHORADO) ---
-    const getImageDimensions = (base64) => new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => resolve({ width: img.width, height: img.height });
-        img.src = base64;
-    });
+    const getImageDimensions = (base64) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ width: img.width, height: img.height }); img.src = base64; });
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -159,7 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.autoTable({
             startY: 30, head: [['Campo', 'Valor']], body: tableData, theme: 'striped',
             headStyles: { fillColor: [255, 193, 7], textColor: 255, fontStyle: 'bold', font: 'Poppins', fontSize: 12 },
-            bodyStyles: { font: 'Poppins', fontSize: 11, cellPadding: 3 }
+            bodyStyles: { font: 'Poppins', fontSize: 11, cellPadding: 3 },
+            margin: { left: 14, right: 14 }
         });
         if (cliente.fotoFrenteBase64 || cliente.fotoVersoBase64) {
             doc.addPage();
@@ -195,22 +173,18 @@ document.addEventListener('DOMContentLoaded', () => {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let { width, height } = img;
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.8)); // Comprime para 80% da qualidade
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
             };
             img.src = e.target.result;
         };
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
-
     const limparFormulario = () => {
         form.reset();
         document.getElementById('fotoFrente-filename').textContent = 'Nenhum arquivo selecionado';
@@ -221,40 +195,36 @@ document.addEventListener('DOMContentLoaded', () => {
             if(errorElement) errorElement.textContent = '';
         });
     };
-
     const adicionarCliente = async (event) => {
         event.preventDefault();
-        if (!validarFormulario()) {
-            showToast('Por favor, corrija os erros no formulário.', true);
-            return;
-        }
+        if (!validarFormulario()) { showToast('Por favor, corrija os erros no formulário.', true); return; }
         setSavingState(true);
         try {
-            const [fotoFrenteBase64, fotoVersoBase64] = await Promise.all([
-                compressAndEncodeImage(inputs.fotoFrente.files[0]),
-                compressAndEncodeImage(inputs.fotoVerso.files[0])
-            ]);
+            const [fotoFrenteBase64, fotoVersoBase64] = await Promise.all([ compressAndEncodeImage(inputs.fotoFrente.files[0]), compressAndEncodeImage(inputs.fotoVerso.files[0]) ]);
             const novoCliente = { timestamp: new Date().toISOString(), fotoFrenteBase64, fotoVersoBase64 };
             Object.keys(inputs).forEach(key => { if (!key.startsWith('foto')) novoCliente[key] = inputs[key].value; });
+            // Salva Localmente
             clientes.push(novoCliente);
             salvarClientes();
+            // Envia para o Firestore
+            await db.collection("cadastros").add(novoCliente);
+            // Atualiza UI
             ordenarEFiltrarClientes();
             limparFormulario();
-            showToast('Cliente salvo com sucesso!');
+            showToast('Cliente salvo e sincronizado!');
         } catch (error) {
-            console.error("Erro ao processar e salvar:", error);
+            console.error("Erro ao salvar:", error);
             showToast("Ocorreu um erro ao salvar os dados.", true);
         } finally {
             setSavingState(false);
         }
     };
-
     const excluirCliente = (clienteParaExcluir) => {
         if (confirm(`Tem certeza de que deseja excluir ${clienteParaExcluir.nome}?`)) {
             clientes = clientes.filter(c => c.timestamp !== clienteParaExcluir.timestamp);
             salvarClientes();
             ordenarEFiltrarClientes();
-            showToast('Cliente excluído.');
+            showToast('Cliente excluído da lista local.');
         }
     };
     
@@ -269,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     ['numeroCasa', 'dataPagamento'].forEach(id => inputs[id].addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g, '')));
-    
     inputBusca.addEventListener('input', ordenarEFiltrarClientes);
     selectOrdenacao.addEventListener('change', ordenarEFiltrarClientes);
     modalCloseBtn.addEventListener('click', hideImageModal);
@@ -280,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(`${id}-filename`).textContent = filename;
         });
     });
-    
     form.addEventListener('submit', adicionarCliente);
     btnLimpar.addEventListener('click', limparFormulario);
 
