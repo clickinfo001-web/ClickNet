@@ -84,17 +84,9 @@ form input:focus, form select:focus {
     box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25);
 }
 
-/* --- Validação em Tempo Real --- */
-.error-message {
-    color: var(--danger-color);
-    font-size: 0.8em;
-    height: 1.2em;
-    display: block;
-    margin-top: 3px;
-}
+/* --- Validação, Input de Arquivo e Botões --- */
+.error-message { color: var(--danger-color); font-size: 0.8em; height: 1.2em; display: block; margin-top: 3px; }
 input.invalid { border-color: var(--danger-color); }
-
-/* --- Estilização do Input de Arquivo --- */
 .file-input-hidden { display: none; }
 .file-input-label {
     background-color: #f8f9fa;
@@ -110,24 +102,15 @@ input.invalid { border-color: var(--danger-color); }
     color: var(--gray-color);
     margin-top: 5px;
     display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-
-/* --- Botões e Spinner --- */
 .form-buttons { display: flex; gap: 15px; margin-top: 25px; }
 button {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 20px;
-    border: none;
-    border-radius: var(--border-radius);
-    color: #fff;
-    font-weight: 600;
-    font-family: 'Poppins', sans-serif;
-    cursor: pointer;
-    transition: background-color var(--transition-speed), transform var(--transition-speed);
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px;
+    border: none; border-radius: var(--border-radius); color: #fff; font-weight: 600;
+    font-family: 'Poppins', sans-serif; cursor: pointer; transition: background-color var(--transition-speed), transform var(--transition-speed);
 }
 button:hover { transform: translateY(-2px); }
 .btn-salvar { background-color: var(--success-color); }
@@ -152,84 +135,55 @@ button:hover { transform: translateY(-2px); }
 /* --- Lista de Clientes --- */
 .lista-header { margin-bottom: 20px; }
 .lista-controles { display: flex; gap: 15px; margin-top: 15px; }
-.lista-controles input, .lista-controles select { flex: 1; }
-
+.lista-controles input, .lista-controles select {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: var(--border-radius);
+    font-family: 'Poppins', sans-serif;
+}
 #lista-clientes-container { max-height: 70vh; overflow-y: auto; padding-right: 5px; }
 .cliente-card {
-    background: #fdfdfd;
-    border: 1px solid #eee;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: var(--border-radius);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+    background: #fdfdfd; border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: var(--border-radius);
+    display: flex; justify-content: space-between; align-items: center; transition: transform var(--transition-speed), box-shadow var(--transition-speed);
 }
 .cliente-card:hover { transform: scale(1.02); box-shadow: var(--shadow); }
-.cliente-info h3 { margin: 0 0 5px 0; font-weight: 600; }
+.cliente-info h3 { margin: 0 0 5px 0; font-weight: 600; font-size: 1.1em; display: flex; align-items: center; }
 .cliente-info p { margin: 0; color: var(--gray-color); font-size: 0.9em; }
-.cliente-info .icon-imagem-anexada { color: var(--info-color); cursor: pointer; }
-.cliente-actions button {
-    padding: 6px 12px;
-    font-size: 0.9em;
-    margin-left: 8px;
-}
+.cliente-info .icon-imagem-anexada { color: var(--info-color); cursor: pointer; font-size: 1em; margin-left: 8px; }
+.cliente-actions button { padding: 6px 12px; font-size: 0.9em; margin-left: 8px; }
 .btn-pdf { background-color: var(--info-color); }
 .btn-excluir { background-color: var(--danger-color); }
 
-/* --- Modal de Imagem --- */
+/* --- Modal e Toast --- */
 .modal-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--transition-speed), visibility var(--transition-speed);
-    z-index: 1000;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7);
+    display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden;
+    transition: opacity var(--transition-speed), visibility var(--transition-speed); z-index: 1000;
 }
 .modal-overlay.visible { opacity: 1; visibility: visible; }
-.modal-content {
-    background: #fff;
-    padding: 20px;
-    border-radius: var(--border-radius);
-    position: relative;
-    max-width: 90%;
-    max-height: 90%;
-}
-.modal-close-btn {
-    position: absolute;
-    top: 10px; right: 15px;
-    font-size: 2em;
-    cursor: pointer;
-    color: var(--gray-color);
-}
+.modal-content { background: #fff; padding: 20px; border-radius: var(--border-radius); position: relative; max-width: 90%; max-height: 90%; }
+.modal-close-btn { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--gray-color); }
 #modal-image-preview { max-width: 100%; max-height: 80vh; }
-
-/* --- Toast Notification --- */
 .toast {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #fff;
-    padding: 15px 25px;
-    border-radius: var(--border-radius);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.5s, bottom 0.5s;
-    z-index: 1001;
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: #fff;
+    padding: 15px 25px; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    opacity: 0; visibility: hidden; transition: opacity 0.5s, bottom 0.5s; z-index: 1001;
 }
 .toast.show { opacity: 1; visibility: visible; bottom: 30px; }
 
-/* --- Responsividade para Celulares --- */
+/* --- Estilos para a Página de Admin --- */
+#login-container {
+    max-width: 400px; margin: 50px auto; padding: 30px; background: #fff;
+    border-radius: var(--border-radius); box-shadow: var(--shadow);
+}
+.hidden { display: none !important; }
+#admin-header { display: flex; justify-content: space-between; align-items: center; }
+#btn-logout { background-color: var(--gray-color); padding: 8px 15px; flex: 0; }
+#btn-logout:hover { background-color: var(--dark-color); }
+
+/* --- Responsividade --- */
 @media (max-width: 992px) {
-    #app-container { flex-direction: column; }
-    body { padding: 15px; }
+    #app-container { flex-direction: column; } body { padding: 15px; }
     #form-section, #lista-section { flex-basis: 100%; }
 }
