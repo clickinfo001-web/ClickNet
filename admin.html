@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Cadastros</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <header><h1><i class="bi bi-shield-lock-fill"></i> Painel Administrativo</h1></header>
+    
+    <main>
+        <div id="login-container">
+            <h2><i class="bi bi-box-arrow-in-right"></i> Login do Admin</h2>
+            <form id="login-form">
+                <div class="field-group">
+                    <label for="email"><i class="bi bi-envelope-fill"></i> E-mail</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="field-group">
+                    <label for="password"><i class="bi bi-key-fill"></i> Senha</label>
+                    <input type="password" id="password" required>
+                </div>
+                <small id="login-error" class="error-message"></small>
+                <div class="form-buttons">
+                    <button type="submit" id="btn-login">Entrar</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="admin-dashboard" class="hidden">
+            <section id="lista-section" style="flex-basis: 100%; max-width: 1400px; margin: 0 auto;">
+                <div id="admin-header" class="lista-header">
+                    <h2><i class="bi bi-card-list"></i> Todos os Cadastros</h2>
+                    <button id="btn-logout"><i class="bi bi-box-arrow-right"></i> Sair</button>
+                </div>
+                <div class="lista-controles">
+                    <input type="search" id="input-busca-admin" placeholder="Buscar por nome ou CPF...">
+                    <select id="select-ordenacao-admin">
+                        <option value="data-desc">Mais Recentes</option>
+                        <option value="data-asc">Mais Antigos</option>
+                        <option value="nome-asc">Nome (A-Z)</option>
+                        <option value="nome-desc">Nome (Z-A)</option>
+                    </select>
+                </div>
+                <div id="lista-clientes-container-admin"></div>
+            </section>
+        </div>
+    </main>
+    
+    <div id="image-modal" class="modal-overlay">
+        <div class="modal-content"><span class="modal-close-btn">&times;</span><img id="modal-image-preview" src="" alt="Preview do Documento"></div>
+    </div>
+    <div id="toast-notification" class="toast"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script src="admin.js"></script>
+</body>
+</html>
