@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
       appId: "1:756016012301:web:bc878607facd4aeaa30944"
     };
 
-    // Inicializa o Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -44,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             loginContainer.classList.add('hidden');
             adminDashboard.classList.remove('hidden');
-            if (todosClientes.length === 0) fetchTodosClientes(); // Busca dados só na primeira vez
+            if (todosClientes.length === 0) fetchTodosClientes();
         } else {
             loginContainer.classList.remove('hidden');
             adminDashboard.classList.add('hidden');
@@ -53,12 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         loginError.textContent = '';
-        const email = loginEmail.value;
-        const password = loginPassword.value;
-        auth.signInWithEmailAndPassword(email, password)
-            .catch(error => {
-                loginError.textContent = "E-mail ou senha inválidos.";
-            });
+        auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value)
+            .catch(error => { loginError.textContent = "E-mail ou senha inválidos."; });
     });
     btnLogout.addEventListener('click', () => auth.signOut());
 
@@ -93,10 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const renderizarListaAdmin = () => {
         listaClientesContainer.innerHTML = '';
-        if (clientesExibidosAdmin.length === 0) {
-            listaClientesContainer.innerHTML = '<p>Nenhum cliente encontrado.</p>';
-            return;
-        }
+        if (clientesExibidosAdmin.length === 0) { listaClientesContainer.innerHTML = '<p>Nenhum cliente encontrado.</p>'; return; }
         clientesExibidosAdmin.forEach((cliente) => {
             const card = document.createElement('div');
             card.className = 'cliente-card';
@@ -122,8 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFont('Poppins', 'bold');
-        doc.setFontSize(18);
+        doc.setFont('Poppins', 'bold'); doc.setFontSize(18);
         doc.text('Ficha Cadastral - Clicknet', 14, 22);
         doc.setFont('Poppins', 'normal');
         const tableData = [['Nome Completo', cliente.nome], ['CPF', cliente.cpf], ['Data de Nascimento', cliente.nascimento], ['Estado Civil', cliente.estadoCivil], ['Endereço', `${cliente.rua}, ${cliente.numeroCasa || 'S/N'} - ${cliente.bairro}`], ['Ponto de Referência', cliente.pontoReferencia], ['Nº de Celular', cliente.celular], ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`]];
@@ -144,12 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!base64) return;
                 const dims = await getImageDimensions(base64);
                 const aspectRatio = dims.width / dims.height;
-                let imgWidth = pageContentWidth;
-                let imgHeight = imgWidth / aspectRatio;
+                let imgWidth = pageContentWidth; let imgHeight = imgWidth / aspectRatio;
                 const maxHeight = 120;
                 if(imgHeight > maxHeight) { imgHeight = maxHeight; imgWidth = imgHeight * aspectRatio; }
-                doc.setFont('Poppins', 'bold');
-                doc.setFontSize(14);
+                doc.setFont('Poppins', 'bold'); doc.setFontSize(14);
                 doc.text(title, 14, currentY);
                 doc.addImage(base64, 'JPEG', 14, currentY + 5, imgWidth, imgHeight);
                 currentY += imgHeight + 20;
