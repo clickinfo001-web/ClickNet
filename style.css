@@ -132,6 +132,37 @@ button:hover { transform: translateY(-2px); }
 .btn-salvar.loading .btn-text { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* --- [NOVO] Checkboxes --- */
+.fieldset-group {
+    border: 1px solid #e0e0e0;
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-top: 25px;
+    margin-bottom: 25px;
+}
+.fieldset-title {
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+.checkbox-group {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin-top: 5px;
+    margin-right: 10px;
+}
+.checkbox-group label {
+    font-weight: 400;
+    font-size: 0.85em;
+    color: var(--gray-color);
+}
+.checkbox-group label b { color: var(--dark-color); }
+
+
 /* --- Lista de Clientes --- */
 .lista-header { margin-bottom: 20px; }
 .lista-controles { display: flex; gap: 15px; margin-top: 15px; }
@@ -154,41 +185,6 @@ button:hover { transform: translateY(-2px); }
 .cliente-actions button { padding: 6px 12px; font-size: 0.9em; margin-left: 8px; }
 .btn-pdf { background-color: var(--info-color); }
 .btn-excluir { background-color: var(--danger-color); }
-
-/* --- [NOVO] Estilos para Checkboxes de Termos --- */
-.terms-fieldset {
-    border: 1px solid #e0e0e0;
-    border-radius: var(--border-radius);
-    padding: 15px;
-    margin-top: 25px;
-    margin-bottom: 15px;
-}
-.terms-fieldset legend {
-    font-weight: 600;
-    padding: 0 10px;
-    font-size: 0.9em;
-}
-.checkbox-group {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 15px;
-}
-.checkbox-group:last-child {
-    margin-bottom: 0;
-}
-.checkbox-group input[type="checkbox"] {
-    margin-top: 5px;
-    margin-right: 12px;
-    width: auto;
-    flex-shrink: 0;
-}
-.checkbox-group label {
-    font-weight: 400;
-    font-size: 0.85em;
-    color: var(--gray-color);
-    cursor: pointer;
-}
-
 
 /* --- Modal e Toast --- */
 .modal-overlay {
