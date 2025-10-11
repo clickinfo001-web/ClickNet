@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         apelido: { pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$/, message: 'Apenas letras, acentos e hífens.' },
         cpf: { required: true, minLength: 14, message: 'CPF inválido.' },
         nascimento: { required: true, minLength: 10, message: 'Data inválida.' },
-        estadoCivil: { pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$/, message: 'Apenas letras, acentos e hífens.' }, // Não é mais obrigatório
+        estadoCivil: { pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$/, message: 'Apenas letras, acentos e hífens.' },
         bairro: { required: true, pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s'.,-]+$/, message: 'Caracteres inválidos.' },
         rua: { required: true, pattern: /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s'.,-]+$/, message: 'Caracteres inválidos.' },
         numeroCasa: { pattern: /^\d*$/, message: 'Apenas números.' },
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const validarCampo = (inputId) => {
         const input = inputs[inputId];
         const rule = regrasValidacao[inputId];
-        const errorMessageElement = input.closest('.field-group').querySelector('.error-message');
+        const errorMessageElement = input.closest('.field-group')?.querySelector('.error-message');
         let isValid = true;
         let errorMessage = '';
         if (!rule) return true;
@@ -125,21 +125,69 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const getImageDimensions = (base64) => new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve({ width: img.width, height: img.height }); img.onerror = reject; img.src = base64; });
+    
+    // =================================================================================
+    // FUNÇÃO GERAR PDF - ATUALIZADA
+    // =================================================================================
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFont('Poppins', 'bold'); doc.setFontSize(18); doc.text('Ficha Cadastral - Clicknet', 14, 22);
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Título Centralizado
+        doc.setFont('Poppins', 'bold');
+        doc.setFontSize(18);
+        doc.text('Ficha Contratual ClickNet', pageWidth / 2, 22, { align: 'center' });
+
+        // Tabela de Dados
         doc.setFont('Poppins', 'normal');
         const tableData = [['Nome Completo', cliente.nome], ['CPF', cliente.cpf], ['Data de Nascimento', cliente.nascimento], ['Estado Civil', cliente.estadoCivil || 'Não informado'], ['Endereço', `${cliente.rua}, ${cliente.numeroCasa || 'S/N'} - ${cliente.bairro}`], ['Ponto de Referência', cliente.pontoReferencia], ['Nº de Celular', cliente.celular], ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`]];
         if (cliente.apelido) tableData.splice(1, 0, ['Apelido', cliente.apelido]);
         if (cliente.email) tableData.push(['E-mail', cliente.email]);
         if (cliente.indicacao) tableData.push(['Indicação', cliente.indicacao]);
+        
         doc.autoTable({
-            startY: 30, head: [['Campo', 'Valor']], body: tableData, theme: 'striped',
+            startY: 30,
+            head: [['Campo', 'Valor']],
+            body: tableData,
+            theme: 'striped',
             headStyles: { fillColor: [255, 193, 7], textColor: 255, fontStyle: 'bold', font: 'Poppins', fontSize: 12 },
-            bodyStyles: { font: 'Poppins', fontSize: 11, cellPadding: 3 },
+            bodyStyles: { font: 'Poppins', fontSize: 12, cellPadding: 3.5 }, // Legibilidade aumentada
             margin: { left: 14, right: 14 }
         });
+
+        // Termos Aceitos
+        let finalY = doc.lastAutoTable.finalY + 15;
+        doc.setFont('Poppins', 'bold');
+        doc.setFontSize(11);
+        doc.text('Termos e Condições Aceitos:', 14, finalY);
+        finalY += 7;
+
+        doc.setFont('Poppins', 'normal');
+        doc.setFontSize(9);
+        const margin = 14;
+        const maxWidth = pageWidth - margin * 2;
+        
+        const termos = [
+            "Pagamentos e prazos: Estou ciente de que devo manter minhas faturas em dia. Após 10 dias úteis de atraso, meu serviço poderá ser bloqueado e, com 30 dias, poderei ser notificado para recolhimento do equipamento até a regularização.",
+            "Condições gerais: Reconheço que a Click Net não possui contrato anual nem cobra juros por atraso, e que em imóveis alugados o pagamento é antecipado.",
+            "Mudança de endereço: Concordo que só posso solicitar mudança de endereço após 90 dias da instalação. Antes disso, será cobrada taxa de R$ 89,90 por mudança.",
+            "Desbloqueio temporário: Estou ciente de que o desbloqueio em confiança pode ser concedido apenas em casos específicos e por até 3 dias.",
+            "Instalação e equipamentos: Reconheço que a instalação é gratuita e que o equipamento é emprestado enquanto meu plano estiver ativo."
+        ];
+
+        termos.forEach(termo => {
+            if (finalY > pageHeight - 20) { // Verifica se precisa de nova página
+                 doc.addPage();
+                 finalY = 20;
+            }
+            const lines = doc.splitTextToSize(`• ${termo}`, maxWidth);
+            doc.text(lines, margin, finalY);
+            finalY += (lines.length * 4) + 4; // Ajusta o espaçamento
+        });
+
+        // Imagens dos Documentos
         if (cliente.fotoFrenteBase64 || cliente.fotoVersoBase64) {
             doc.addPage();
             let currentY = 20;
@@ -161,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await addImageToPdf(cliente.fotoFrenteBase64, 'Documento - Frente');
             await addImageToPdf(cliente.fotoVersoBase64, 'Documento - Verso');
         }
-        doc.save(`cadastro_${cliente.nome.replace(/\s/g, '_')}.pdf`);
+        doc.save(`contrato_${cliente.nome.replace(/\s/g, '_')}.pdf`);
     };
 
     const compressAndEncodeImage = (file) => new Promise((resolve, reject) => {
@@ -178,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.85)); // 85% qualidade
+                resolve(canvas.toDataURL('image/jpeg', 0.85));
             };
             img.onerror = () => reject(new Error("Não foi possível carregar a imagem. O formato pode ser incompatível (ex: HEIC)."));
             img.src = e.target.result;
@@ -193,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('fotoVerso-filename').textContent = 'Nenhum arquivo selecionado';
         Object.values(inputs).forEach(input => {
             input.classList.remove('invalid');
-            const fieldGroup = input.closest('.field-group');
+            const fieldGroup = input.closest('.field-group, .checkbox-group');
             if (fieldGroup) {
                 const errorElement = fieldGroup.querySelector('.error-message');
                 if(errorElement) errorElement.textContent = '';
@@ -235,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    Object.keys(regrasValidacao).forEach(id => inputs[id].addEventListener('blur', () => validarCampo(id)));
+    Object.keys(regrasValidacao).forEach(id => inputs[id]?.addEventListener('blur', () => validarCampo(id)));
     ['cpf', 'nascimento', 'celular'].forEach(id => {
         inputs[id].addEventListener('input', e => {
             let v = e.target.value.replace(/\D/g, '');
