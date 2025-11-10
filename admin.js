@@ -96,11 +96,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'cliente-card';
             const temImagem = cliente.fotoFrenteBase64 || cliente.fotoVersoBase64;
-            const nomeHtml = `<h3>${cliente.nome} ${temImagem ? `<i class="bi bi-image-alt icon-imagem-anexada" title="Ver imagem"></i>` : ''}</h3>`;
+            const temAssinatura = cliente.fotoAssinatura;
+            let icones = '';
+            if (temImagem) icones += ` <i class="bi bi-image-alt icon-imagem-anexada" title="Ver imagem"></i>`;
+            if (temAssinatura) icones += ` <i class="bi bi-pen-fill icon-imagem-anexada" title="Contém assinatura"></i>`;
+            
+            const nomeHtml = `<h3>${cliente.nome} ${icones}</h3>`;
             card.innerHTML = `<div class="cliente-info">${nomeHtml}<p>${cliente.plano} - ${cliente.cpf}</p></div><div class="cliente-actions"><button class="btn-pdf"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</button><button class="btn-excluir"><i class="bi bi-x-circle-fill"></i> Excluir</button></div>`;
             card.querySelector('.btn-pdf').addEventListener('click', () => gerarPDF(cliente));
             card.querySelector('.btn-excluir').addEventListener('click', () => excluirClienteDoFirestore(cliente));
-            if(temImagem) card.querySelector('.icon-imagem-anexada').addEventListener('click', () => showImageModal(cliente.fotoFrenteBase64 || cliente.fotoVersoBase64));
+            
+            // Adiciona evento de clique para o ícone de imagem (se existir)
+            const imgIcon = card.querySelector('.bi-image-alt');
+            if (imgIcon) {
+                imgIcon.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Impede que o clique dispare outros eventos
+                    showImageModal(cliente.fotoFrenteBase64 || cliente.fotoVersoBase64);
+                });
+            }
+            
+            // Adiciona evento de clique para o ícone de assinatura (se existir)
+            const sigIcon = card.querySelector('.bi-pen-fill');
+            if (sigIcon) {
+                sigIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showImageModal(cliente.fotoAssinatura);
+                });
+            }
+
             listaClientesContainer.appendChild(card);
         });
     };
@@ -135,7 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ['Estado Civil', cliente.estadoCivil || 'Não informado'], 
             ['Endereço', `${cliente.rua}, ${cliente.numeroCasa || 'S/N'} - ${cliente.bairro}`], 
             ['Ponto de Referência', cliente.pontoReferencia], ['Nº de Celular', cliente.celular], 
-            ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`]
+            ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`],
+            ['Casa Alugada', cliente.casaAlugada || 'Não'] // Adicionado (com valor padrão)
         ];
         if (cliente.apelido) tableData.splice(1, 0, ['Apelido', cliente.apelido]);
         if (cliente.email) tableData.push(['E-mail', cliente.email]);
@@ -168,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const termos = [
             { title: "1. Pagamentos e prazos", items: [
                 "1.1 Declaro que devo manter minhas faturas em dia.",
-                "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 10 (dez) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
+                "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 15 (quinze) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
                 "1.3 Declaro que a persistência do débito por prazo superior poderá acarretar rescisão contratual e recolhimento do equipamento pela ClickNet, observados os prazos e procedimentos previstos neste Termo e na regulamentação aplicável.",
                 "1.4 Declaro que eventuais encargos por atraso serão aplicados nos termos da legislação vigente, sem indicação de percentuais fixos neste Termo, observando-se o direito à informação clara sobre quaisquer encargos no contrato de prestação de serviço."
             ]},
@@ -226,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cliente.fotoAssinatura) {
             try {
                 const dims = await getImageDimensions(cliente.fotoAssinatura);
-                const sigWidth = 120; // Assinatura maior
+                const sigWidth = 120; // Assinatura grande
                 const sigHeight = (dims.height * sigWidth) / dims.width;
                 const sigX = (pageWidth - sigWidth) / 2; // Centralizada
                 let sigY = finalY_pg3 + 20;

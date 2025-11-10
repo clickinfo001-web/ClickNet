@@ -29,11 +29,12 @@ body {
 header {
     display: flex;
     justify-content: center;
-    margin-bottom: 30px;
+    /* Espaçamento reduzido */
+    margin-bottom: 15px;
 }
 .logotipo {
     /* Logo maior */
-    max-height: 185px;
+    max-height: 150px;
     width: auto;
 }
 h2 {
@@ -118,7 +119,6 @@ button:hover { transform: translateY(-2px); }
 }
 /* Scroll único - removido max-height */
 #lista-clientes-container-admin {
-    overflow-y: auto;
     padding-right: 5px;
 }
 .cliente-card {
