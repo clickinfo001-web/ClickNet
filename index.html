@@ -18,8 +18,12 @@
 </head>
 <body>
 
+    <div id="splash-screen">
+        <img src="logotipo.svg" alt="Clicknet Logotipo">
+    </div>
+
     <header>
-        <h1><i class="bi bi-person-lines-fill"></i> Clicknet</h1>
+        <img src="logotipo.svg" alt="Clicknet Logotipo" class="logotipo">
     </header>
 
     <main>
@@ -129,26 +133,16 @@
                     </div>
 
                     <div class="fieldset-group">
-                        <p class="fieldset-title">Declaro estar ciente e de acordo com as Regras Básicas – ClickNet.*</p>
+                        <p class="fieldset-title">Consentimento e Assinatura*</p>
                         <div class="checkbox-group">
-                            <input type="checkbox" id="termo1">
-                            <label for="termo1"><b>Pagamentos e prazos:</b> Estou ciente de que devo manter minhas faturas em dia. Após 10 dias úteis de atraso, meu serviço poderá ser bloqueado e, com 30 dias, poderei ser notificado para recolhimento do equipamento até a regularização.</label>
+                            <input type="checkbox" id="consent-checkbox">
+                            <label for="consent-checkbox" id="consent-label">Li e aceito o <span id="open-consent-modal" class="text-link">Termo de Ciência e Consentimento da ClickNet</span>, em conformidade com as regras de contratação e leis vigentes.</label>
                         </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="termo2">
-                            <label for="termo2"><b>Condições gerais:</b> Reconheço que a Click Net não possui contrato anual nem cobra juros por atraso, e que em imóveis alugados o pagamento é antecipado.</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="termo3">
-                            <label for="termo3"><b>Mudança de endereço:</b> Concordo que só posso solicitar mudança de endereço após 90 dias da instalação. Antes disso, será cobrada taxa de R$ 89,90 por mudança.</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="termo4">
-                            <label for="termo4"><b>Desbloqueio temporário:</b> Estou ciente de que o desbloqueio em confiança pode ser concedido apenas em casos específicos e por até 3 dias.</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="termo5">
-                            <label for="termo5"><b>Instalação e equipamentos:</b> Reconheço que a instalação é gratuita e que o equipamento é emprestado enquanto meu plano estiver ativo.</label>
+
+                        <div id="signature-pad-container">
+                            <label><i class="bi bi-pencil-fill"></i> Assine no quadro abaixo:*</label>
+                            <canvas id="signature-pad"></canvas>
+                            <button type="button" id="clear-signature" class="btn-limpar-assinatura"><i class="bi bi-eraser-fill"></i> Limpar</button>
                         </div>
                     </div>
 
@@ -188,10 +182,57 @@
         </div>
     </div>
     
+    <div id="consent-modal" class="modal-overlay">
+        <div class="modal-content-termo">
+            <div id="consent-modal-header">
+                <h3>TERMO DE CIÊNCIA E CONSENTIMENTO – CLICKNET</h3>
+            </div>
+            <div id="consent-modal-text">
+                <p>Eu, abaixo assinado(a),</p>
+                <p>Declaro que li, compreendi e aceito as condições abaixo, em conformidade com o Código Civil (Lei nº 10.406/2002), o Código de Defesa do Consumidor (Lei nº 8.078/1990) e a regulamentação da ANATEL aplicável (incluindo Resolução nº 765/2023 e atos correlatos).</p>
+                
+                <h4>1. Pagamentos e prazos</h4>
+                <p>1.1 Declaro que devo manter minhas faturas em dia.</p>
+                <p>1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 15 (quinze) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.</p>
+                <p>1.3 Declaro que a persistência do débito por prazo superior poderá acarretar rescisão contratual e recolhimento do equipamento pela ClickNet, observados os prazos e procedimentos previstos neste Termo e na regulamentação aplicável.</p>
+                <p>1.4 Declaro que eventuais encargos por atraso serão aplicados nos termos da legislação vigente, sem indicação de percentuais fixos neste Termo, observando-se o direito à informação clara sobre quaisquer encargos no contrato de prestação de serviço.</p>
+
+                <h4>2. Condições gerais</h4>
+                <p>2.1 Declaro que fui informado(a)(o) de que o plano contratado é, quando assim indicado na oferta, sem contrato de fidelidade anual, podendo ser cancelado conforme as condições contratuais.</p>
+                <p>2.2 Declaro que fui informado(a)(o) de que a ClickNet poderá, a seu critério comercial, não cobrar juros por atraso; caso a cobrança de encargos seja aplicada, estes serão comunicados de forma clara e estarão sujeitos à legislação aplicável.</p>
+                <p>2.3 Autorizo expressamente o eventual adiantamento da primeira parcela quando o serviço for contratado para imóvel alugado, desde que tal exigência tenha sido previamente informada por escrito e eu a tenha aceitado no momento da contratação.</p>
+                
+                <h4>3. Mudança de endereço</h4>
+                <p>3.1 Declaro que a solicitação de mudança de endereço poderá estar condicionada a um prazo mínimo de utilização de 90 (noventa) dias a contar da instalação, quando essa condição for aplicável e previamente informada no contrato.</p>
+                <p>3.2 Declaro que, caso solicite mudança antes do referido prazo, concordo com a possível cobrança da taxa administrativa de R$ 89,90 (oitenta e nove reais e noventa centavos), desde que esse valor e sua justificativa tenham sido previamente informados no contrato/termo de adesão.</p>
+                <p>3.3 Declaro que a efetivação da mudança depende de disponibilidade técnica no novo endereço.</p>
+                
+                <h4>4. Desbloqueio temporário (“em confiança”)</h4>
+                <p>4.1 Declaro que fui informado(a)(o) de que a ClickNet poderá, a seu critério, conceder desbloqueio provisório do serviço “em confiança” por até 3 (três) dias para permitir eventual regularização de pagamento.</p>
+                <p>4.2 Declaro que, se o débito não for quitado dentro do período concedido, serão aplicadas as medidas previstas nas cláusulas de inadimplemento (suspensão, rescisão e recolhimento do equipamento), e que eventual cobrança referente ao período concedido será previamente informada.</p>
+                
+                <h4>5. Instalação e equipamentos (comodato)</h4>
+                <p>5.1 Declaro que fui informado(a)(o) de que a instalação do serviço é gratuita, quando assim prevista na oferta.</p>
+                <p>5.2 Declaro que os equipamentos fornecidos (modem, roteador, ONU, etc.) são disponibilizados em regime de comodato e permanecem de propriedade da ClickNet enquanto o plano estiver ativo, nos termos do Código Civil.</p>
+                <p>5.3 Declaro que, em caso de cancelamento, a ClickNet realizará o recolhimento dos equipamentos sem custo para mim, em local por mim indicado, em prazo acordado que não poderá exceder 30 (trinta) dias contados da solicitação de desativação; se a ClickNet não recolher no prazo, cessará a minha responsabilidade pela guarda dos equipamentos.</p>
+                
+                <h4>6. Declarações finais e comunicações</h4>
+                <p>6.1 Declaro que todas as informações relevantes sobre encargos, prazos, taxas e procedimentos me foram previamente informadas e estão disponíveis no contrato e nas Regras Básicas da ClickNet.</p>
+                <p>6.2 Declaro que autorizo a ClickNet a me comunicar por e-mail, SMS, aplicativo ou telefone para fins de gestão contratual, cobrança e informações sobre o serviço, nos termos do contrato.</p>
+                <p>6.3 Declaro que recebi orientação de que este Termo foi elaborado com base no Código Civil, no Código de Defesa do Consumidor e na regulamentação da ANATEL aplicável (incluindo Resolução nº 765/2023), e que a ClickNet poderá atualizar procedimentos conforme alterações regulatórias, comunicando-me quando necessário.</p>
+            </div>
+            <div id="consent-modal-footer">
+                <button id="btn-confirmar-termo" class="btn-salvar" disabled>Confirmar Leitura e Aceite</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="toast-notification" class="toast"></div>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.7/signature_pad.umd.min.js"></script>
     
     <script src="script.js"></script>
 </body>

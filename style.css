@@ -44,20 +44,52 @@ body {
 #form-section { flex-basis: 40%; }
 #lista-section { flex-basis: 55%; }
 
+/* --- Splash Screen --- */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--light-color);
+    z-index: 1002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Transição de fade-out mais suave */
+    transition: opacity 0.8s ease-in-out;
+}
+#splash-screen img {
+    max-width: 200px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+#splash-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
 /* --- Cabeçalho e Títulos --- */
-header h1, h2 {
+header {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+.logotipo {
+    /* Logo maior */
+    max-height: 85px;
+    width: auto;
+}
+h2 {
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
 }
-
-header h1 {
-    color: var(--primary-dark);
-    font-size: 2.5em;
-    margin-bottom: 30px;
-}
-header h1 i { margin-right: 15px; color: var(--primary-color); }
 h2 i { margin-right: 10px; }
 
 /* --- Formulário --- */
@@ -132,7 +164,7 @@ button:hover { transform: translateY(-2px); }
 .btn-salvar.loading .btn-text { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* --- [NOVO] Checkboxes --- */
+/* --- Checkboxes de Consentimento e Assinatura --- */
 .fieldset-group {
     border: 1px solid #e0e0e0;
     border-radius: var(--border-radius);
@@ -154,14 +186,49 @@ button:hover { transform: translateY(-2px); }
     width: auto;
     margin-top: 5px;
     margin-right: 10px;
+    cursor: pointer;
 }
 .checkbox-group label {
     font-weight: 400;
     font-size: 0.85em;
     color: var(--gray-color);
 }
-.checkbox-group label b { color: var(--dark-color); }
-
+#consent-label {
+    font-size: 0.9em;
+    color: var(--dark-color);
+}
+.text-link {
+    color: var(--info-color);
+    text-decoration: underline;
+    cursor: pointer;
+}
+#signature-pad-container {
+    margin-top: 20px;
+    position: relative;
+}
+#signature-pad-container label {
+    font-weight: 600;
+    font-size: 0.9em;
+}
+#signature-pad {
+    border: 1px dashed var(--gray-color);
+    border-radius: var(--border-radius);
+    /* Canvas maior e responsivo */
+    width: 100%;
+    height: 200px;
+    cursor: crosshair;
+}
+.btn-limpar-assinatura {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    font-size: 0.9em;
+    padding: 5px;
+    flex: 0;
+}
 
 /* --- Lista de Clientes --- */
 .lista-header { margin-bottom: 20px; }
@@ -186,7 +253,7 @@ button:hover { transform: translateY(-2px); }
 .btn-pdf { background-color: var(--info-color); }
 .btn-excluir { background-color: var(--danger-color); }
 
-/* --- Modal e Toast --- */
+/* --- Modal Genérico e Toast --- */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7);
     display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden;
@@ -203,15 +270,49 @@ button:hover { transform: translateY(-2px); }
 }
 .toast.show { opacity: 1; visibility: visible; bottom: 30px; }
 
-/* --- Estilos para a Página de Admin --- */
-#login-container {
-    max-width: 400px; margin: 50px auto; padding: 30px; background: #fff;
-    border-radius: var(--border-radius); box-shadow: var(--shadow);
+/* --- Modal de Termos de Consentimento --- */
+.modal-content-termo {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: var(--border-radius);
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
 }
-.hidden { display: none !important; }
-#admin-header { display: flex; justify-content: space-between; align-items: center; }
-#btn-logout { background-color: var(--gray-color); padding: 8px 15px; flex: 0; }
-#btn-logout:hover { background-color: var(--dark-color); }
+#consent-modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+}
+#consent-modal-header h3 {
+    margin: 0;
+    font-weight: 700;
+}
+#consent-modal-text {
+    padding: 25px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+#consent-modal-text h4 {
+    font-weight: 700;
+    color: var(--dark-color);
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+#consent-modal-text p {
+    font-size: 0.9em;
+    color: var(--gray-color);
+    margin-bottom: 10px;
+}
+#consent-modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+    text-align: right;
+}
+#btn-confirmar-termo {
+    flex: 0;
+}
 
 /* --- Responsividade --- */
 @media (max-width: 992px) {
