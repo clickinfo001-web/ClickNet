@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dataPagamento: document.getElementById('dataPagamento'), indicacao: document.getElementById('indicacao'),
         fotoFrente: document.getElementById('fotoFrente'), fotoVerso: document.getElementById('fotoVerso'),
     };
-    // Seletores de Rádio para "Casa Alugada"
     const casaAlugadaRadios = document.querySelectorAll('input[name="casaAlugada"]');
     const avisoAluguel = document.getElementById('aviso-aluguel');
     
@@ -35,17 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCloseBtn = document.querySelector('.modal-close-btn');
     const toast = document.getElementById('toast-notification');
     
-    // Elementos da Splash Screen
     const splashScreen = document.getElementById('splash-screen');
     
-    // Elementos do Modal de Consentimento
     const consentModal = document.getElementById('consent-modal');
     const openConsentModalLink = document.getElementById('open-consent-modal');
     const consentModalText = document.getElementById('consent-modal-text');
     const btnConfirmarTermo = document.getElementById('btn-confirmar-termo');
     const consentCheckbox = document.getElementById('consent-checkbox');
     
-    // Elementos do Modal de Assinatura
     const signatureModal = document.getElementById('signature-modal');
     const signaturePlaceholder = document.getElementById('signature-placeholder');
     const signaturePlaceholderText = document.getElementById('signature-placeholder-text');
@@ -56,13 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let clientes = [];
     let clientesExibidos = [];
-    let capturedSignatureData = null; // Armazena a assinatura
+    let capturedSignatureData = null;
 
     // --- LÓGICA DA SPLASH SCREEN ---
     window.addEventListener('load', () => {
         setTimeout(() => {
             splashScreen.classList.add('hidden');
-        }, 1000); // 1 segundo de splash
+        }, 1000); // 1 segundo
     });
     
     // --- FUNÇÕES DE PERSISTÊNCIA E UI ---
@@ -118,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
         
-        if (!capturedSignatureData) { // Verifica se a assinatura foi capturada
+        if (!capturedSignatureData) {
             showToast('A assinatura é obrigatória.', true);
             document.getElementById('signature-error').textContent = 'Assinatura obrigatória.';
             return false;
@@ -170,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getImageDimensions = (base64) => new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve({ width: img.width, height: img.height }); img.onerror = reject; img.src = base64; });
     
     // =================================================================================
-    // FUNÇÃO GERAR PDF - ATUALIZADA (4 PÁGINAS)
+    // FUNÇÃO GERAR PDF - ATUALIZADA (4 PÁGINAS, NOVO TEXTO, NOVO CAMPO)
     // =================================================================================
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
@@ -189,12 +185,13 @@ document.addEventListener('DOMContentLoaded', () => {
             ['Estado Civil', cliente.estadoCivil || 'Não informado'], 
             ['Endereço', `${cliente.rua}, ${cliente.numeroCasa || 'S/N'} - ${cliente.bairro}`], 
             ['Ponto de Referência', cliente.pontoReferencia], ['Nº de Celular', cliente.celular], 
-            ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`],
-            ['Casa Alugada', cliente.casaAlugada] // Adicionado
+            ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`]
         ];
         if (cliente.apelido) tableData.splice(1, 0, ['Apelido', cliente.apelido]);
         if (cliente.email) tableData.push(['E-mail', cliente.email]);
         if (cliente.indicacao) tableData.push(['Indicação', cliente.indicacao]);
+        // Adicionando "Casa Alugada"
+        tableData.push(['Casa Alugada', cliente.casaAlugada]);
         
         doc.autoTable({
             startY: 30, head: [['Campo', 'Valor']], body: tableData, theme: 'striped',
@@ -223,7 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const termos = [
             { title: "1. Pagamentos e prazos", items: [
                 "1.1 Declaro que devo manter minhas faturas em dia.",
-                "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 15 (quinze) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
+                // TEXTO ALTERADO DE 15 PARA 10 DIAS
+                "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 10 (dez) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
                 "1.3 Declaro que a persistência do débito por prazo superior poderá acarretar rescisão contratual e recolhimento do equipamento pela ClickNet, observados os prazos e procedimentos previstos neste Termo e na regulamentação aplicável.",
                 "1.4 Declaro que eventuais encargos por atraso serão aplicados nos termos da legislação vigente, sem indicação de percentuais fixos neste Termo, observando-se o direito à informação clara sobre quaisquer encargos no contrato de prestação de serviço."
             ]},
@@ -350,19 +348,22 @@ document.addEventListener('DOMContentLoaded', () => {
         form.reset();
         capturedSignatureData = null;
         signaturePlaceholder.classList.remove('signed');
-        signaturePlaceholderText.textContent = 'Clique aqui para assinar';
+        signaturePlaceholderText.innerHTML = '<i class="bi bi-pen-fill"></i> Clique aqui para assinar';
         document.getElementById('signature-error').textContent = '';
         consentCheckbox.checked = false;
         document.getElementById('fotoFrente-filename').textContent = 'Nenhum arquivo selecionado';
         document.getElementById('fotoVerso-filename').textContent = 'Nenhum arquivo selecionado';
-        avisoAluguel.classList.remove('visible'); // Esconde o aviso de casa alugada
+        avisoAluguel.classList.remove('visible');
+        document.getElementById('casa-alugada-nao').checked = true; // Reseta o radio button
         
         Object.values(inputs).forEach(input => {
-            input.classList.remove('invalid');
-            const fieldGroup = input.closest('.field-group');
-            if (fieldGroup) {
-                const errorElement = fieldGroup.querySelector('.error-message');
-                if(errorElement) errorElement.textContent = '';
+            if (input) {
+                input.classList.remove('invalid');
+                const fieldGroup = input.closest('.field-group');
+                if (fieldGroup) {
+                    const errorElement = fieldGroup.querySelector('.error-message');
+                    if(errorElement) errorElement.textContent = '';
+                }
             }
         });
     };
@@ -381,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 timestamp: new Date().toISOString(), 
                 fotoFrenteBase64, 
                 fotoVersoBase64,
-                fotoAssinatura: capturedSignatureData // Adiciona a assinatura capturada
+                fotoAssinatura: capturedSignatureData
             };
             
             Object.keys(regrasValidacao).forEach(key => { 
@@ -423,7 +424,6 @@ document.addEventListener('DOMContentLoaded', () => {
         signatureCanvasModal.getContext("2d").scale(ratio, ratio);
         signaturePadModal.clear(); 
     }
-    // Redimensiona quando a janela muda E quando o modal é aberto
     window.addEventListener('resize', resizeCanvas);
 
     // Validação de campos
@@ -475,6 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     openConsentModalLink.addEventListener('click', abrirModalConsentimento);
+    // Adicionado clique no próprio checkbox
     consentCheckbox.addEventListener('click', (e) => {
         e.preventDefault();
         abrirModalConsentimento();
@@ -496,7 +497,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Lógica do Modal de Assinatura
     signaturePlaceholder.addEventListener('click', () => {
         signatureModal.classList.add('visible');
-        // Redimensiona o canvas APÓS o modal estar visível
         setTimeout(resizeCanvas, 50); 
     });
     clearSignatureModalBtn.addEventListener('click', () => {
@@ -508,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         capturedSignatureData = signaturePadModal.toDataURL('image/png');
-        signaturePlaceholderText.textContent = 'Assinatura capturada com sucesso!';
+        signaturePlaceholderText.innerHTML = '<i class="bi bi-check-circle-fill"></i> Assinatura capturada!';
         signaturePlaceholder.classList.add('signed');
         document.getElementById('signature-error').textContent = '';
         signatureModal.classList.remove('visible');

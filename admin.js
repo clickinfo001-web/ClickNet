@@ -106,16 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
             card.querySelector('.btn-pdf').addEventListener('click', () => gerarPDF(cliente));
             card.querySelector('.btn-excluir').addEventListener('click', () => excluirClienteDoFirestore(cliente));
             
-            // Adiciona evento de clique para o ícone de imagem (se existir)
             const imgIcon = card.querySelector('.bi-image-alt');
             if (imgIcon) {
                 imgIcon.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Impede que o clique dispare outros eventos
+                    e.stopPropagation(); 
                     showImageModal(cliente.fotoFrenteBase64 || cliente.fotoVersoBase64);
                 });
             }
             
-            // Adiciona evento de clique para o ícone de assinatura (se existir)
             const sigIcon = card.querySelector('.bi-pen-fill');
             if (sigIcon) {
                 sigIcon.addEventListener('click', (e) => {
@@ -139,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getImageDimensions = (base64) => new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve({ width: img.width, height: img.height }); img.onerror = reject; img.src = base64; });
 
     // =================================================================================
-    // FUNÇÃO GERAR PDF - ATUALIZADA (4 PÁGINAS)
+    // FUNÇÃO GERAR PDF - ATUALIZADA (4 PÁGINAS, NOVO TEXTO, NOVO CAMPO)
     // =================================================================================
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
@@ -158,12 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
             ['Estado Civil', cliente.estadoCivil || 'Não informado'], 
             ['Endereço', `${cliente.rua}, ${cliente.numeroCasa || 'S/N'} - ${cliente.bairro}`], 
             ['Ponto de Referência', cliente.pontoReferencia], ['Nº de Celular', cliente.celular], 
-            ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`],
-            ['Casa Alugada', cliente.casaAlugada || 'Não'] // Adicionado (com valor padrão)
+            ['Plano', cliente.plano], ['Data de Pagamento', `Dia ${cliente.dataPagamento}`]
         ];
         if (cliente.apelido) tableData.splice(1, 0, ['Apelido', cliente.apelido]);
         if (cliente.email) tableData.push(['E-mail', cliente.email]);
         if (cliente.indicacao) tableData.push(['Indicação', cliente.indicacao]);
+        // Adicionando "Casa Alugada"
+        tableData.push(['Casa Alugada', cliente.casaAlugada || 'Não']);
         
         doc.autoTable({
             startY: 30, head: [['Campo', 'Valor']], body: tableData, theme: 'striped',
@@ -192,7 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const termos = [
             { title: "1. Pagamentos e prazos", items: [
                 "1.1 Declaro que devo manter minhas faturas em dia.",
-                "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 15 (quinze) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
+                // TEXTO ALTERADO DE 15 PARA 10 DIAS
+                "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 10 (dez) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
                 "1.3 Declaro que a persistência do débito por prazo superior poderá acarretar rescisão contratual e recolhimento do equipamento pela ClickNet, observados os prazos e procedimentos previstos neste Termo e na regulamentação aplicável.",
                 "1.4 Declaro que eventuais encargos por atraso serão aplicados nos termos da legislação vigente, sem indicação de percentuais fixos neste Termo, observando-se o direito à informação clara sobre quaisquer encargos no contrato de prestação de serviço."
             ]},
