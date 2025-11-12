@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dataPagamento: document.getElementById('dataPagamento'), indicacao: document.getElementById('indicacao'),
         fotoFrente: document.getElementById('fotoFrente'), fotoVerso: document.getElementById('fotoVerso'),
     };
+    // Seletores de Rádio para "Casa Alugada"
     const casaAlugadaRadios = document.querySelectorAll('input[name="casaAlugada"]');
     const avisoAluguel = document.getElementById('aviso-aluguel');
     
@@ -34,14 +35,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCloseBtn = document.querySelector('.modal-close-btn');
     const toast = document.getElementById('toast-notification');
     
+    // Elementos da Splash Screen
     const splashScreen = document.getElementById('splash-screen');
     
+    // Elementos do Modal de Consentimento
     const consentModal = document.getElementById('consent-modal');
     const openConsentModalLink = document.getElementById('open-consent-modal');
     const consentModalText = document.getElementById('consent-modal-text');
     const btnConfirmarTermo = document.getElementById('btn-confirmar-termo');
     const consentCheckbox = document.getElementById('consent-checkbox');
     
+    // Elementos do Modal de Assinatura
     const signatureModal = document.getElementById('signature-modal');
     const signaturePlaceholder = document.getElementById('signature-placeholder');
     const signaturePlaceholderText = document.getElementById('signature-placeholder-text');
@@ -52,13 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let clientes = [];
     let clientesExibidos = [];
-    let capturedSignatureData = null;
+    let capturedSignatureData = null; // Armazena a assinatura
 
     // --- LÓGICA DA SPLASH SCREEN ---
     window.addEventListener('load', () => {
         setTimeout(() => {
             splashScreen.classList.add('hidden');
         }, 1000); // 1 segundo
+        resizeCanvas(); // Chama o redimensionamento do canvas
     });
     
     // --- FUNÇÕES DE PERSISTÊNCIA E UI ---
@@ -166,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getImageDimensions = (base64) => new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve({ width: img.width, height: img.height }); img.onerror = reject; img.src = base64; });
     
     // =================================================================================
-    // FUNÇÃO GERAR PDF - ATUALIZADA (4 PÁGINAS, NOVO TEXTO, NOVO CAMPO)
+    // FUNÇÃO GERAR PDF - ATUALIZADA
     // =================================================================================
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
@@ -220,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const termos = [
             { title: "1. Pagamentos e prazos", items: [
                 "1.1 Declaro que devo manter minhas faturas em dia.",
-                // TEXTO ALTERADO DE 15 PARA 10 DIAS
                 "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 10 (dez) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
                 "1.3 Declaro que a persistência do débito por prazo superior poderá acarretar rescisão contratual e recolhimento do equipamento pela ClickNet, observados os prazos e procedimentos previstos neste Termo e na regulamentação aplicável.",
                 "1.4 Declaro que eventuais encargos por atraso serão aplicados nos termos da legislação vigente, sem indicação de percentuais fixos neste Termo, observando-se o direito à informação clara sobre quaisquer encargos no contrato de prestação de serviço."
@@ -418,11 +422,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Redimensionamento do Canvas de Assinatura (função para precisão)
     function resizeCanvas() {
-        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        signatureCanvasModal.width = signatureCanvasModal.offsetWidth * ratio;
-        signatureCanvasModal.height = signatureCanvasModal.offsetHeight * ratio;
-        signatureCanvasModal.getContext("2d").scale(ratio, ratio);
-        signaturePadModal.clear(); 
+        // Assegura que o canvas do modal exista
+        if (signatureCanvasModal) {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            signatureCanvasModal.width = signatureCanvasModal.offsetWidth * ratio;
+            signatureCanvasModal.height = signatureCanvasModal.offsetHeight * ratio;
+            signatureCanvasModal.getContext("2d").scale(ratio, ratio);
+            signaturePadModal.clear(); 
+        }
     }
     window.addEventListener('resize', resizeCanvas);
 
@@ -471,11 +478,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const abrirModalConsentimento = () => {
         consentModal.classList.add('visible');
         consentModalText.scrollTop = 0;
-        btnConfirmarTermo.disabled = true;
+        // REMOVIDA a linha que desabilitava o botão
     };
     
     openConsentModalLink.addEventListener('click', abrirModalConsentimento);
-    // Adicionado clique no próprio checkbox
     consentCheckbox.addEventListener('click', (e) => {
         e.preventDefault();
         abrirModalConsentimento();
@@ -484,11 +490,9 @@ document.addEventListener('DOMContentLoaded', () => {
     consentModal.addEventListener('click', (e) => {
         if (e.target === consentModal) consentModal.classList.remove('visible');
     });
-    consentModalText.addEventListener('scroll', (e) => {
-        if (e.target.scrollTop + e.target.clientHeight >= e.target.scrollHeight - 10) {
-            btnConfirmarTermo.disabled = false;
-        }
-    });
+
+    // REMOVIDO o event listener de scroll
+    
     btnConfirmarTermo.addEventListener('click', () => {
         consentCheckbox.checked = true;
         consentModal.classList.remove('visible');

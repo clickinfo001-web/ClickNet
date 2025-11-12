@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getImageDimensions = (base64) => new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve({ width: img.width, height: img.height }); img.onerror = reject; img.src = base64; });
 
     // =================================================================================
-    // FUNÇÃO GERAR PDF - ATUALIZADA (4 PÁGINAS, NOVO TEXTO, NOVO CAMPO)
+    // FUNÇÃO GERAR PDF - ATUALIZADA
     // =================================================================================
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
@@ -191,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const termos = [
             { title: "1. Pagamentos e prazos", items: [
                 "1.1 Declaro que devo manter minhas faturas em dia.",
-                // TEXTO ALTERADO DE 15 PARA 10 DIAS
                 "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 10 (dez) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
                 "1.3 Declaro que a persistência do débito por prazo superior poderá acarretar rescisão contratual e recolhimento do equipamento pela ClickNet, observados os prazos e procedimentos previstos neste Termo e na regulamentação aplicável.",
                 "1.4 Declaro que eventuais encargos por atraso serão aplicados nos termos da legislação vigente, sem indicação de percentuais fixos neste Termo, observando-se o direito à informação clara sobre quaisquer encargos no contrato de prestação de serviço."
