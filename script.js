@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dataPagamento: document.getElementById('dataPagamento'), indicacao: document.getElementById('indicacao'),
         fotoFrente: document.getElementById('fotoFrente'), fotoVerso: document.getElementById('fotoVerso'),
     };
-    // Seletores de Rádio para "Casa Alugada"
     const casaAlugadaRadios = document.querySelectorAll('input[name="casaAlugada"]');
     const avisoAluguel = document.getElementById('aviso-aluguel');
     
@@ -35,35 +34,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCloseBtn = document.querySelector('.modal-close-btn');
     const toast = document.getElementById('toast-notification');
     
-    // Elementos da Splash Screen
     const splashScreen = document.getElementById('splash-screen');
     
-    // Elementos do Modal de Consentimento
     const consentModal = document.getElementById('consent-modal');
     const openConsentModalLink = document.getElementById('open-consent-modal');
     const consentModalText = document.getElementById('consent-modal-text');
     const btnConfirmarTermo = document.getElementById('btn-confirmar-termo');
     const consentCheckbox = document.getElementById('consent-checkbox');
     
-    // Elementos do Modal de Assinatura
     const signatureModal = document.getElementById('signature-modal');
     const signaturePlaceholder = document.getElementById('signature-placeholder');
     const signaturePlaceholderText = document.getElementById('signature-placeholder-text');
     const signatureCanvasModal = document.getElementById('signature-pad-modal');
     const clearSignatureModalBtn = document.getElementById('clear-signature-modal');
     const confirmSignatureModalBtn = document.getElementById('confirm-signature-modal');
-    const signaturePadModal = new SignaturePad(signatureCanvasModal);
+    const signaturePadModal = new SignaturePad(signatureCanvasModal, { throttle: 16 });
     
     let clientes = [];
     let clientesExibidos = [];
-    let capturedSignatureData = null; // Armazena a assinatura
+    let capturedSignatureData = null;
 
     // --- LÓGICA DA SPLASH SCREEN ---
     window.addEventListener('load', () => {
         setTimeout(() => {
             splashScreen.classList.add('hidden');
-        }, 1000); // 1 segundo
-        resizeCanvas(); // Chama o redimensionamento do canvas
+        }, 1000); 
     });
     
     // --- FUNÇÕES DE PERSISTÊNCIA E UI ---
@@ -171,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getImageDimensions = (base64) => new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve({ width: img.width, height: img.height }); img.onerror = reject; img.src = base64; });
     
     // =================================================================================
-    // FUNÇÃO GERAR PDF - ATUALIZADA
+    // FUNÇÃO GERAR PDF - ATUALIZADA (4 PÁGINAS, 10 DIAS, CASA ALUGADA)
     // =================================================================================
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
@@ -195,8 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cliente.apelido) tableData.splice(1, 0, ['Apelido', cliente.apelido]);
         if (cliente.email) tableData.push(['E-mail', cliente.email]);
         if (cliente.indicacao) tableData.push(['Indicação', cliente.indicacao]);
-        // Adicionando "Casa Alugada"
-        tableData.push(['Casa Alugada', cliente.casaAlugada]);
+        tableData.push(['Casa Alugada', cliente.casaAlugada || 'Não']);
         
         doc.autoTable({
             startY: 30, head: [['Campo', 'Valor']], body: tableData, theme: 'striped',
@@ -422,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Redimensionamento do Canvas de Assinatura (função para precisão)
     function resizeCanvas() {
-        // Assegura que o canvas do modal exista
         if (signatureCanvasModal) {
             const ratio = Math.max(window.devicePixelRatio || 1, 1);
             signatureCanvasModal.width = signatureCanvasModal.offsetWidth * ratio;
@@ -478,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const abrirModalConsentimento = () => {
         consentModal.classList.add('visible');
         consentModalText.scrollTop = 0;
-        // REMOVIDA a linha que desabilitava o botão
+        // REMOVIDO bloqueio de botão
     };
     
     openConsentModalLink.addEventListener('click', abrirModalConsentimento);
@@ -491,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === consentModal) consentModal.classList.remove('visible');
     });
 
-    // REMOVIDO o event listener de scroll
+    // REMOVIDO listener de scroll
     
     btnConfirmarTermo.addEventListener('click', () => {
         consentCheckbox.checked = true;

@@ -29,11 +29,10 @@ body {
 header {
     display: flex;
     justify-content: center;
-    /* Espaçamento reduzido */
     margin-bottom: 15px;
 }
 .logotipo {
-    /* Logo maior */
+    /* Logo aumentado */
     max-height: 150px;
     width: auto;
 }

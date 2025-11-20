@@ -56,7 +56,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Transição de fade-out mais suave */
+    /* Transição de fade-out suave */
     transition: opacity 0.8s ease-in-out;
 }
 #splash-screen img {
@@ -77,11 +77,10 @@ body {
 header {
     display: flex;
     justify-content: center;
-    /* Espaçamento reduzido */
     margin-bottom: 15px;
 }
 .logotipo {
-    /* Logo maior */
+    /* Logo aumentado */
     max-height: 150px;
     width: auto;
 }
