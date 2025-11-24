@@ -28,30 +28,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCloseBtn = document.querySelector('.modal-close-btn');
     const toast = document.getElementById('toast-notification');
 
-    let todosClientes = [];
-    let clientesExibidosAdmin = [];
-    
+    // Variáveis de Estado e Paginação
+    let todosClientesCarregados = []; // Armazena tudo que já baixamos da nuvem
+    let clientesFiltrados = [];       // O que está sendo exibido na tela (busca/filtro)
+    let lastVisibleDocument = null;   // Marcador para saber onde parou a busca
+    let isFetching = false;           // Trava para evitar cliques duplos
+    const PAGE_SIZE = 15;             // Quantidade de cadastros por vez
+    let loadMoreBtn = null;           // Referência para o botão que criaremos via código
+
     const showToast = (message, isError = false) => { toast.textContent = message; toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--success-color)'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); };
     const showImageModal = (base64) => { modalImagePreview.src = base64; imageModal.classList.add('visible'); };
     const hideImageModal = () => imageModal.classList.remove('visible');
     
+    // --- AUTENTICAÇÃO ---
     auth.onAuthStateChanged(user => {
         if (user) {
             loginContainer.classList.add('hidden');
             adminDashboard.classList.remove('hidden');
-            if (todosClientes.length === 0) fetchTodosClientes();
+            // Se a lista estiver vazia, busca a primeira página
+            if (todosClientesCarregados.length === 0) fetchNextPage();
         } else {
             loginContainer.classList.remove('hidden');
             adminDashboard.classList.add('hidden');
+            todosClientesCarregados = [];
+            lastVisibleDocument = null;
         }
     });
 
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         loginError.textContent = '';
-        const email = loginEmail.value;
-        const password = loginPassword.value;
-        auth.signInWithEmailAndPassword(email, password)
+        auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value)
             .catch(error => {
                 loginError.textContent = "E-mail ou senha inválidos.";
             });
@@ -59,42 +66,125 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnLogout.addEventListener('click', () => auth.signOut());
 
-    const fetchTodosClientes = () => {
-        db.collection("cadastros").onSnapshot(snapshot => {
-            todosClientes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            ordenarEFiltrarClientesAdmin();
-        }, error => {
-            console.error("Erro ao buscar cadastros:", error);
-            showToast("Não foi possível carregar os cadastros.", true);
+    // --- LÓGICA DE PAGINAÇÃO E BUSCA DE DADOS (OTIMIZADA) ---
+    
+    // Função para criar/gerenciar o botão "Carregar Mais" via JS
+    const setupLoadMoreButton = () => {
+        if (!loadMoreBtn) {
+            loadMoreBtn = document.createElement('button');
+            loadMoreBtn.textContent = "Carregar Mais Antigos...";
+            loadMoreBtn.style.display = 'none'; // Começa invisível
+            loadMoreBtn.style.width = '100%';
+            loadMoreBtn.style.padding = '15px';
+            loadMoreBtn.style.marginTop = '20px';
+            loadMoreBtn.style.backgroundColor = 'var(--gray-color)';
+            loadMoreBtn.style.color = '#fff';
+            loadMoreBtn.style.border = 'none';
+            loadMoreBtn.style.borderRadius = '8px';
+            loadMoreBtn.style.cursor = 'pointer';
+            loadMoreBtn.style.fontSize = '1rem';
+            loadMoreBtn.onclick = fetchNextPage;
+            
+            // Adiciona o botão APÓS a lista
+            listaClientesContainer.parentNode.appendChild(loadMoreBtn);
+        }
+    };
+
+    const fetchNextPage = () => {
+        if (isFetching) return;
+        isFetching = true;
+        if (loadMoreBtn) loadMoreBtn.textContent = "Carregando...";
+
+        let query = db.collection("cadastros").orderBy("timestamp", "desc").limit(PAGE_SIZE);
+
+        if (lastVisibleDocument) {
+            query = query.startAfter(lastVisibleDocument);
+        }
+
+        query.get().then((snapshot) => {
+            if (snapshot.empty) {
+                if (loadMoreBtn) {
+                    loadMoreBtn.textContent = "Todos os cadastros foram carregados.";
+                    loadMoreBtn.disabled = true;
+                }
+                isFetching = false;
+                return;
+            }
+
+            // Atualiza o cursor para o último documento
+            lastVisibleDocument = snapshot.docs[snapshot.docs.length - 1];
+
+            const novosClientes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Adiciona os novos à lista global
+            todosClientesCarregados = [...todosClientesCarregados, ...novosClientes];
+            
+            // Atualiza a tela
+            aplicarFiltrosEOrdenacao();
+            
+            // Configura o botão
+            setupLoadMoreButton();
+            if (loadMoreBtn) {
+                loadMoreBtn.style.display = 'block';
+                loadMoreBtn.textContent = "Carregar Mais Antigos...";
+                loadMoreBtn.disabled = false;
+            }
+            
+            // Se vieram menos documentos que o limite, chegamos ao fim
+            if (snapshot.docs.length < PAGE_SIZE && loadMoreBtn) {
+                loadMoreBtn.style.display = 'none';
+            }
+
+            isFetching = false;
+        }).catch(error => {
+            console.error("Erro ao buscar:", error);
+            showToast("Erro ao carregar dados. Verifique sua conexão.", true);
+            isFetching = false;
         });
     };
     
-    const ordenarEFiltrarClientesAdmin = () => {
-        let processados = [...todosClientes];
+    // Função que combina a lista carregada com a busca e ordenação
+    const aplicarFiltrosEOrdenacao = () => {
+        let processados = [...todosClientesCarregados];
         const termoBusca = inputBusca.value.toLowerCase();
+        
+        // Filtra (apenas no que já foi carregado)
         if (termoBusca) {
-            processados = processados.filter(c => c.nome.toLowerCase().includes(termoBusca) || (c.cpf && c.cpf.includes(termoBusca)));
+            processados = processados.filter(c => 
+                c.nome.toLowerCase().includes(termoBusca) || 
+                (c.cpf && c.cpf.includes(termoBusca))
+            );
         }
+
+        // Ordena
+        const tipo = selectOrdenacao.value;
         processados.sort((a, b) => {
-            const tipo = selectOrdenacao.value;
             if (tipo === 'nome-asc') return a.nome.localeCompare(b.nome);
             if (tipo === 'nome-desc') return b.nome.localeCompare(a.nome);
             if (tipo === 'data-asc') return new Date(a.timestamp) - new Date(b.timestamp);
-            return new Date(b.timestamp) - new Date(a.timestamp);
+            return new Date(b.timestamp) - new Date(a.timestamp); // data-desc (padrão)
         });
-        clientesExibidosAdmin = processados;
-        renderizarListaAdmin();
+
+        clientesFiltrados = processados;
+        renderizarLista();
     };
     
-    const renderizarListaAdmin = () => {
+    const renderizarLista = () => {
         listaClientesContainer.innerHTML = '';
-        if (clientesExibidosAdmin.length === 0) {
-            listaClientesContainer.innerHTML = '<p>Nenhum cliente encontrado.</p>';
+        
+        if (clientesFiltrados.length === 0) {
+            if (todosClientesCarregados.length === 0) {
+                listaClientesContainer.innerHTML = '<p style="text-align:center; padding:20px;">Nenhum cadastro encontrado.</p>';
+            } else {
+                listaClientesContainer.innerHTML = '<p style="text-align:center; padding:20px;">Nenhum resultado para sua busca nos itens carregados.</p>';
+            }
             return;
         }
-        clientesExibidosAdmin.forEach((cliente) => {
+
+        clientesFiltrados.forEach((cliente) => {
             const card = document.createElement('div');
             card.className = 'cliente-card';
+            
             const temImagem = cliente.fotoFrenteBase64 || cliente.fotoVersoBase64;
             const temAssinatura = cliente.fotoAssinatura;
             let icones = '';
@@ -102,7 +192,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (temAssinatura) icones += ` <i class="bi bi-pen-fill icon-imagem-anexada" title="Contém assinatura"></i>`;
             
             const nomeHtml = `<h3>${cliente.nome} ${icones}</h3>`;
-            card.innerHTML = `<div class="cliente-info">${nomeHtml}<p>${cliente.plano} - ${cliente.cpf}</p></div><div class="cliente-actions"><button class="btn-pdf"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</button><button class="btn-excluir"><i class="bi bi-x-circle-fill"></i> Excluir</button></div>`;
+            
+            // Formatação básica da data para exibição
+            const data = new Date(cliente.timestamp).toLocaleDateString('pt-BR');
+            
+            card.innerHTML = `
+                <div class="cliente-info">
+                    ${nomeHtml}
+                    <p>${cliente.plano} • CPF: ${cliente.cpf} • Data: ${data}</p>
+                </div>
+                <div class="cliente-actions">
+                    <button class="btn-pdf"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</button>
+                    <button class="btn-excluir"><i class="bi bi-x-circle-fill"></i> Excluir</button>
+                </div>
+            `;
+            
             card.querySelector('.btn-pdf').addEventListener('click', () => gerarPDF(cliente));
             card.querySelector('.btn-excluir').addEventListener('click', () => excluirClienteDoFirestore(cliente));
             
@@ -129,7 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const excluirClienteDoFirestore = (cliente) => {
         if (confirm(`ADMIN: Tem certeza que deseja excluir ${cliente.nome} PERMANENTEMENTE de todos os registros?`)) {
             db.collection("cadastros").doc(cliente.id).delete()
-            .then(() => showToast("Cliente excluído do servidor."))
+            .then(() => {
+                showToast("Cliente excluído do servidor.");
+                // Remove da lista localmente para não precisar recarregar tudo
+                todosClientesCarregados = todosClientesCarregados.filter(c => c.id !== cliente.id);
+                aplicarFiltrosEOrdenacao();
+            })
             .catch(err => showToast("Erro ao excluir cliente.", true));
         }
     };
@@ -137,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getImageDimensions = (base64) => new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve({ width: img.width, height: img.height }); img.onerror = reject; img.src = base64; });
 
     // =================================================================================
-    // FUNÇÃO GERAR PDF - ATUALIZADA (4 PÁGINAS, NOVO TEXTO, NOVO CAMPO)
+    // FUNÇÃO GERAR PDF (IGUAL À DO USUÁRIO)
     // =================================================================================
     const gerarPDF = async (cliente) => {
         const { jsPDF } = window.jspdf;
@@ -191,7 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const termos = [
             { title: "1. Pagamentos e prazos", items: [
                 "1.1 Declaro que devo manter minhas faturas em dia.",
-                // TEXTO ALTERADO DE 15 PARA 10 DIAS
                 "1.2 Declaro estar ciente de que, em caso de atraso, a ClickNet me notificará por meio indicado no contrato (por exemplo, e-mail, SMS ou telefone), e que a suspensão parcial do serviço poderá ocorrer após 10 (dez) dias contados da data de recebimento da notificação, observadas as normas aplicáveis.",
                 "1.3 Declaro que a persistência do débito por prazo superior poderá acarretar rescisão contratual e recolhimento do equipamento pela ClickNet, observados os prazos e procedimentos previstos neste Termo e na regulamentação aplicável.",
                 "1.4 Declaro que eventuais encargos por atraso serão aplicados nos termos da legislação vigente, sem indicação de percentuais fixos neste Termo, observando-se o direito à informação clara sobre quaisquer encargos no contrato de prestação de serviço."
@@ -291,9 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.save(`contrato_${cliente.nome.replace(/\s/g, '_')}.pdf`);
     };
 
-    // --- SETUP DE EVENTOS DO ADMIN ---
-    inputBusca.addEventListener('input', ordenarEFiltrarClientesAdmin);
-    selectOrdenacao.addEventListener('change', ordenarEFiltrarClientesAdmin);
+    inputBusca.addEventListener('input', aplicarFiltrosEOrdenacao);
+    selectOrdenacao.addEventListener('change', aplicarFiltrosEOrdenacao);
     modalCloseBtn.addEventListener('click', hideImageModal);
     imageModal.addEventListener('click', (e) => { if(e.target === imageModal) hideImageModal(); });
 });
